@@ -1,142 +1,155 @@
 package com.appxemphim.firebaseBackend.service;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.springframework.beans.BeanUtils;
-import org.springframework.stereotype.Service;
-
 import com.appxemphim.firebaseBackend.Utilities.GoogleUtilities;
 import com.appxemphim.firebaseBackend.dto.request.MovieRequest;
 import com.appxemphim.firebaseBackend.dto.response.MovieDTO;
+import com.appxemphim.firebaseBackend.exception.ResourceNotFoundException;
 import com.appxemphim.firebaseBackend.model.Movie;
 import com.appxemphim.firebaseBackend.model.Review;
-import com.google.api.core.ApiFuture;
-import com.google.cloud.Timestamp;
-import com.google.cloud.firestore.CollectionReference;
+import com.appxemphim.firebaseBackend.repository.MovieRepository;
 import com.google.cloud.firestore.DocumentReference;
 import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
-import com.google.cloud.firestore.Query;
-import com.google.cloud.firestore.QueryDocumentSnapshot;
-import com.google.cloud.firestore.QuerySnapshot;
 import com.google.firebase.cloud.FirestoreClient;
-import java.time.ZoneId;
-import java.util.Date;
-
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class MovieService {
+
+    private static final Logger logger = LoggerFactory.getLogger(MovieService.class);
+    private final MovieRepository movieRepository;
     private final GoogleUtilities googleUtilities;
     private final VideoService videoService;
     private final PersonService personService;
     private final GenresService genresService;
     private final Firestore db = FirestoreClient.getFirestore();
 
-    public MovieDTO getMovieById(String id) throws Exception {
-        try{
-            DocumentReference docRef = db.collection("Movies").document(id.trim());
-            DocumentSnapshot snapshot = docRef.get().get();
-
-        if (!snapshot.exists()) {
-            throw new RuntimeException("Movie not found");
-        }
-
-        Movie movie = snapshot.toObject(Movie.class);
-        MovieDTO movieDTO = new MovieDTO();
-        BeanUtils.copyProperties(movie, movieDTO); // ánh xạ toàn bộ field có cùng tên
-        movieDTO.setActors(personService.findALLActorForMovie(id, "Movie_Actor"));
-        movieDTO.setDirectors(personService.findALLActorForMovie(id, "Movie_Director"));
-        movieDTO.setReviews((List<Review>) snapshot.get("reviews"));
-        movieDTO.setVideos(videoService.getAllForMideo(id));
-        movieDTO.setGenres(genresService.getAllForMovie(id));
-        return movieDTO;
-        }catch( Exception e){
-            throw new RuntimeException("Lỗi khi thêm movie: "+ e.getMessage());
-        }
-        
-    }
-    
-    
-    public List<Movie> findAll() throws Exception {
-        ApiFuture<QuerySnapshot> future = db.collection("Movies").get();      
-        List<QueryDocumentSnapshot> documents = future.get().getDocuments();
-        List<Movie> movieList = new ArrayList<>();
-        for (QueryDocumentSnapshot doc : documents) {
-            Movie movie = doc.toObject(Movie.class);
-            movie.setMovie_Id(doc.getId());
-            movieList.add(movie);
-        }
-        return movieList;
-    }
-
-    public String create(MovieRequest movieRequet){
+   
+    public String create(MovieRequest movieRequest) {
         try {
             Movie movie = new Movie();
             DocumentReference docRef = db.collection("Movies").document();
-    
+
             movie.setMovie_Id(docRef.getId());
-            movie.setTitle(movieRequet.getTitle());
-            movie.setDescription(movieRequet.getDescription());
-            movie.setPoster_url(googleUtilities.exportLink(movieRequet.getPoster_url()));
-            movie.setTrailer_url(googleUtilities.exportLink(movieRequet.getTrailer_url()));
-            movie.setRating(movieRequet.getRating());
-            movie.setNation(movieRequet.getNation());
-            movie.setCreated_at(movieRequet.getCreated_at());
-    
-            ApiFuture<com.google.cloud.firestore.WriteResult> future = docRef.set(movie);
-            future.get();
-    
+            movie.setTitle(movieRequest.getTitle());
+            movie.setDescription(movieRequest.getDescription());
+            movie.setPoster_url(googleUtilities.exportLink(movieRequest.getPoster_url()));
+            movie.setTrailer_url(googleUtilities.exportLink(movieRequest.getTrailer_url()));
+            movie.setRating(movieRequest.getRating());
+            movie.setNation(movieRequest.getNation());
+            movie.setCreated_at(movieRequest.getCreated_at());
+
+            docRef.set(movie).get();
+            logger.info("Created movie with ID: {}", movie.getMovie_Id());
             return "Thêm phim thành công!";
         } catch (Exception e) {
-            e.printStackTrace();
-            return "Thêm phim thất bại: " + e.getMessage();
+            logger.error("Failed to create movie: {}", e.getMessage(), e);
+            throw new RuntimeException("Thêm phim thất bại: " + e.getMessage());
         }
     }
 
-    public List<Movie> getMovieByGenres(String genres_id){
-        List<Movie> result = new ArrayList<>();
-        try{
-            CollectionReference movieGenresRef = db.collection("Movie_Genres");
-            Query query = movieGenresRef.whereEqualTo("genres_id", genres_id);
-            ApiFuture<QuerySnapshot> querySnapshot = query.get();
-            for (DocumentSnapshot document : querySnapshot.get().getDocuments()){
-                String movie_id = document.getString("movive_Id");
-                DocumentReference genresRef = db.collection("Movies").document(movie_id);
-                ApiFuture<DocumentSnapshot> future = genresRef.get();
-                DocumentSnapshot genresDoc = future.get();
-                if(genresDoc.exists()){
-                    Movie movie = genresDoc.toObject(Movie.class);
-                    result.add(movie);
-                }
+    @Cacheable(value = "movies", key = "#id")
+    public MovieDTO getMovieById(String id) {
+        Movie movie = movieRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Movie not found with ID: " + id));
+        return enrichMovieDTO(movie, Set.of("genres", "actors", "directors", "videos", "reviews"));
+    }
+
+
+    public Page<MovieDTO> searchMovies(
+            String title,
+            List<String> genres,
+            List<Integer> years,
+            List<String> nations,
+            double minRating,
+            Pageable pageable,
+            Set<String> include) {
+        List<Movie> movies = movieRepository.searchMovies(title, genres, years, nations, minRating);
+        List<MovieDTO> movieDTOs = movies.stream()
+                .map(movie -> enrichMovieDTO(movie, include != null ? include : Set.of("genres")))
+                .collect(Collectors.toList());
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), movieDTOs.size());
+        List<MovieDTO> pagedMovies = movieDTOs.subList(start, end);
+
+        return new PageImpl<>(pagedMovies, pageable, movieDTOs.size());
+    }
+
+    // đóng gói thông tin của movie thành movieDTO để trả về cho client
+    private MovieDTO enrichMovieDTO(Movie movie, Set<String> include) {
+        MovieDTO dto = new MovieDTO();
+        dto.setMovie_Id(movie.getMovie_Id());
+        dto.setTitle(movie.getTitle());
+        dto.setDescription(movie.getDescription());
+        dto.setPoster_url(movie.getPoster_url());
+        dto.setTrailer_url(movie.getTrailer_url());
+        dto.setRating(movie.getRating());
+        dto.setNation(movie.getNation());
+        dto.setCreated_at(movie.getCreated_at());
+
+        String movieId = movie.getMovie_Id();
+        try {
+            if (include.contains("genres")) {
+                dto.setGenres(genresService.getAllForMovie(movieId));
             }
-            return result;
-        }catch( Exception e){
-            throw new RuntimeException(e.getMessage());
+            if (include.contains("actors")) {
+                dto.setActors(personService.findALLActorForMovie(movieId, "Movie_Actor"));
+            }
+            if (include.contains("directors")) {
+                dto.setDirectors(personService.findALLActorForMovie(movieId, "Movie_Directors"));
+            }
+            if (include.contains("videos")) {
+                dto.setVideos(videoService.getAllForMideo(movieId));
+            }
+            if (include.contains("reviews")) {
+                dto.setReviews(getReviewsForMovie(movieId));
+            }
+        } catch (Exception e) {
+            logger.error("Failed to enrich movie DTO for ID {}: {}", movieId, e.getMessage());
+        }
+
+        return dto;
+    }
+
+    private List<Review> getReviewsForMovie(String movieId) {
+        try {
+            DocumentReference docRef = db.collection("Movies").document(movieId);
+            DocumentSnapshot snapshot = docRef.get().get();
+            return (List<Review>) snapshot.get("reviews");
+        } catch (Exception e) {
+            logger.error("Failed to fetch reviews for movie ID {}: {}", movieId, e.getMessage());
+            return new ArrayList<>();
         }
     }
 
-    public List<Movie> getMovieByYear(Integer year){
-        List<Movie> result = new ArrayList<>();
-        try{
-            LocalDateTime startOfYear = LocalDateTime.of(year, 1, 1, 0, 0);
-            LocalDateTime startOfNextYear = LocalDateTime.of(year + 1, 1, 1, 0, 0);
-            Timestamp startTimestamp = Timestamp.of(Date.from(startOfYear.atZone(ZoneId.systemDefault()).toInstant()));
-            Timestamp endTimestamp = Timestamp.of(Date.from(startOfNextYear.atZone(ZoneId.systemDefault()).toInstant()));
-            CollectionReference movieRef = db.collection("Movies");
-            Query query = movieRef.whereGreaterThanOrEqualTo("created_at", startTimestamp).whereLessThan("created_at", endTimestamp);
-
-            ApiFuture<QuerySnapshot> querySnapshot = query.get();
-            for (DocumentSnapshot document : querySnapshot.get().getDocuments()){
-                Movie movie = document.toObject(Movie.class);
-                result.add(movie);
-            }
-            return result;
-        }catch( Exception e){
-            throw new RuntimeException(e.getMessage());
+    public List<?> getMovieDetails(String movieId, String detailType) {
+        switch (detailType.toLowerCase()) {
+            case "videos":
+                return videoService.getAllForMideo(movieId);
+            case "actors":
+                return personService.findALLActorForMovie(movieId, "Movie_Actor");
+            case "directors":
+                return personService.findALLActorForMovie(movieId, "Movie_Directors");
+            case "reviews":
+                return getReviewsForMovie(movieId);
+            case "genres":
+                return genresService.getAllForMovie(movieId);
+            default:
+                throw new IllegalArgumentException("Invalid detail type: " + detailType);
         }
     }
 }

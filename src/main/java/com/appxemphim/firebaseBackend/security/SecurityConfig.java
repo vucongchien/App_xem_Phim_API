@@ -22,9 +22,10 @@ public class SecurityConfig {
         http
         .securityMatcher("/**") // Áp dụng cho tất cả các request
         .authorizeHttpRequests(authorize -> authorize
+            .requestMatchers("/").permitAll()
             .requestMatchers("/auth/**").permitAll() // Cho phép login/signup
             .requestMatchers("/email/**").permitAll() // Cho phép check email
-            .anyRequest().authenticated() // Các request khác cần xác thực (JWT sau)
+            .anyRequest().permitAll() // Các request khác cần xác thực (JWT sau)
         )
         .csrf(csrf -> csrf.disable()) // Tắt CSRF cho API REST
         .addFilterBefore(new JwtRequestFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class); // Thêm filter để xác thực JWT
