@@ -65,7 +65,7 @@ public class MovieController {
     @PostMapping
     public ResponseEntity<String> createMovie(@Valid @RequestBody MovieRequest movieRequest) {
         logger.info("Creating new movie with title: {}", movieRequest.getTitle());
-        String response = movieService.create(movieRequest);
+String response = movieService.create(movieRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
