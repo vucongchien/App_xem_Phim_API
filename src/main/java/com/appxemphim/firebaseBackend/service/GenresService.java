@@ -13,6 +13,7 @@ import com.google.cloud.firestore.DocumentReference;
 import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.Query;
+import com.google.cloud.firestore.QueryDocumentSnapshot;
 import com.google.cloud.firestore.QuerySnapshot;
 import com.google.firebase.cloud.FirestoreClient;
 import com.google.firebase.database.FirebaseDatabase;
@@ -44,7 +45,22 @@ public class GenresService {
             throw new RuntimeException("Lỗi khi lấy thể loại: "+ e.getMessage());
         }
     }
-    // lấy tất cả các danh sách thể loại
+
+    public List<Genres> getAllFGenres(){
+        try{
+            ApiFuture<QuerySnapshot> future = db.collection("Genres").get();      
+            List<QueryDocumentSnapshot> documents = future.get().getDocuments();
+            List<Genres> genresList = new ArrayList<>();
+            for (QueryDocumentSnapshot doc : documents) {
+                Genres genres = doc.toObject(Genres.class);
+                genresList.add(genres);
+            }
+            return genresList;
+        }catch( Exception e){
+            throw new RuntimeException("Lỗi khi lấy danh sách thể loại: "+ e.getMessage());
+        }
+       
+    }
     
 
 }

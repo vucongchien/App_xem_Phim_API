@@ -10,5 +10,4 @@ import lombok.Setter;
 public class Genres {
     String genres_id;
     String name;
-
 }
