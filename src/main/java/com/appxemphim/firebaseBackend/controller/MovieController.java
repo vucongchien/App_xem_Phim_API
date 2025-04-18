@@ -3,6 +3,7 @@ package com.appxemphim.firebaseBackend.controller;
 import com.appxemphim.firebaseBackend.dto.request.MovieRequest;
 import com.appxemphim.firebaseBackend.dto.response.MovieDTO;
 import com.appxemphim.firebaseBackend.exception.ResourceNotFoundException;
+import com.appxemphim.firebaseBackend.model.Movie;
 import com.appxemphim.firebaseBackend.service.MovieService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -16,6 +17,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import java.util.List;
 import java.util.Set;
@@ -30,27 +32,34 @@ public class MovieController {
     private final MovieService movieService;
 
     @GetMapping
-    public ResponseEntity<Page<MovieDTO>> getMovies(
+    public ResponseEntity<Page<Movie>> getMovies(
             @RequestParam(required = false) String title,
             @RequestParam(required = false) List<String> genres,
             @RequestParam(required = false) List<Integer> years,
             @RequestParam(required = false) List<String> nations,
             @RequestParam(defaultValue = "0.0") @Min(0) Double minRating,
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "10") @Min(1) int size,
-            @RequestParam(defaultValue = "genres") Set<String> include) {
-        logger.info("Fetching movies with filters: title={}, genres={}, years={}, nations={}, minRating={}, include={}",
-                title, genres, years, nations, minRating, include);
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size) {
+        logger.info("Fetching movies with filters: title={}, genres={}, years={}, nations={}, minRating={}",
+                title, genres, years, nations, minRating);
         Pageable pageable = PageRequest.of(page, size);
-        Page<MovieDTO> movies = movieService.searchMovies(title, genres, years, nations, minRating, pageable, include);
+        Page<Movie> movies = movieService.searchMovies(title, genres, years, nations, minRating, pageable);
         return ResponseEntity.ok(movies);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<MovieDTO> getMovieById(@PathVariable String id) {
         logger.info("Fetching movie with ID: {}", id);
-        MovieDTO movieDTO = movieService.getMovieById(id);
-        return ResponseEntity.ok(movieDTO);
+        try {
+            MovieDTO movieDTO = movieService.getMovieById(id);
+            return ResponseEntity.ok(movieDTO);
+        } catch (ResourceNotFoundException e) {
+            logger.warn("Movie not found with ID: {}", id);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        } catch (Exception e) {
+            logger.error("Error fetching movie with ID: {}", id, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
 
     @PostMapping
@@ -61,9 +70,17 @@ public class MovieController {
     }
 
     @GetMapping("/{id}/{detailType}")
-    public ResponseEntity<List<?>> getMovieDetails(@PathVariable String id, @PathVariable String detailType) {
+    public ResponseEntity<?> getMovieDetails(@PathVariable String id, @PathVariable String detailType) {
         logger.info("Fetching {} for movie ID: {}", detailType, id);
-        List<?> details = movieService.getMovieDetails(id, detailType);
-        return ResponseEntity.ok(details);
+        try {
+            Object details = movieService.getMovieDetails(id, detailType);
+            return ResponseEntity.ok(details);
+        } catch (ResourceNotFoundException e) {
+            logger.warn("Movie not found with ID: {}", id);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        } catch (Exception e) {
+            logger.error("Error fetching details for movie ID: {}", id, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
 }
