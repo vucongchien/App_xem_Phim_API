@@ -1,0 +1,382 @@
+{
+	"info": {
+		"_postman_id": "cc9ba9de-909e-4acd-89cb-186a939ebb46",
+		"name": "APP_XEM_PHIM",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "42420464"
+	},
+	"item": [
+		{
+			"name": "Moive",
+			"item": [
+				{
+					"name": "movie",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ5R0dZUnZpVTR1VmJqT0kzM1dxaGhZSWVSNUcyIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzQ0NjAzOTA0LCJleHAiOjE3NDU5ODg3MzN9.5JkXB5jyeVZHKgDdlvxcdNdgLVDrvSsWEsUblJYSQXM",
+								"type": "text"
+							}
+						],
+						"url": "http://localhost:8081/movies/findAll"
+					},
+					"response": []
+				},
+				{
+					"name": "findbyID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ5R0dZUnZpVTR1VmJqT0kzM1dxaGhZSWVSNUcyIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzQ0NjAzOTA0LCJleHAiOjE3NDU5ODg3MzN9.5JkXB5jyeVZHKgDdlvxcdNdgLVDrvSsWEsUblJYSQXM",
+								"type": "text"
+							}
+						],
+						"url": "http://localhost:8081/movies/rMlXfo9TGonjR8NuwNGE"
+					},
+					"response": []
+				},
+				{
+					"name": "getmoviebygenres",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ5R0dZUnZpVTR1VmJqT0kzM1dxaGhZSWVSNUcyIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzQ0NjAzOTA0LCJleHAiOjE3NDU5ODg3MzN9.5JkXB5jyeVZHKgDdlvxcdNdgLVDrvSsWEsUblJYSQXM",
+								"type": "text"
+							}
+						],
+						"url": "http://localhost:8081/movies/findbygenres/092Kr8JUMk1A0Kxh1QoP"
+					},
+					"response": []
+				},
+				{
+					"name": "getmoivebyYear",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ5R0dZUnZpVTR1VmJqT0kzM1dxaGhZSWVSNUcyIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzQ0NjAzOTA0LCJleHAiOjE3NDU5ODg3MzN9.5JkXB5jyeVZHKgDdlvxcdNdgLVDrvSsWEsUblJYSQXM",
+								"type": "text"
+							}
+						],
+						"url": "http://localhost:8081/movies/findByYear/2010"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Email",
+			"item": [
+				{
+					"name": "isemailexist",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ5R0dZUnZpVTR1VmJqT0kzM1dxaGhZSWVSNUcyIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzQ0NjAzOTA0LCJleHAiOjE3NDU5ODg3MzN9.5JkXB5jyeVZHKgDdlvxcdNdgLVDrvSsWEsUblJYSQXM",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"url": "http://localhost:8081/email/dangviethung2701@gmail.com"
+					},
+					"response": []
+				},
+				{
+					"name": "sendDTO",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ5R0dZUnZpVTR1VmJqT0kzM1dxaGhZSWVSNUcyIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzQ0NjAzOTA0LCJleHAiOjE3NDU5ODg3MzN9.5JkXB5jyeVZHKgDdlvxcdNdgLVDrvSsWEsUblJYSQXM",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "http://localhost:8081/email/senDTO/dangviethung2701@gmail.com"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "video",
+			"item": [
+				{
+					"name": "getAllForMovie",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ5R0dZUnZpVTR1VmJqT0kzM1dxaGhZSWVSNUcyIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzQ0NjAzOTA0LCJleHAiOjE3NDU5ODg3MzN9.5JkXB5jyeVZHKgDdlvxcdNdgLVDrvSsWEsUblJYSQXM",
+								"type": "text"
+							}
+						],
+						"url": "http://localhost:8081/video/fLw0OvQQXDzXogXwxj0k"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Review",
+			"item": [
+				{
+					"name": "create",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ5R0dZUnZpVTR1VmJqT0kzM1dxaGhZSWVSNUcyIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzQ0NjAzOTA0LCJleHAiOjE3NDU5ODg3MzN9.5JkXB5jyeVZHKgDdlvxcdNdgLVDrvSsWEsUblJYSQXM",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"movie_id\": \"rMlXfo9TGonjR8NuwNGE\",\r\n  \"user_id\": \"vMPm7XxGj9P9TBynwWcV8GPtzbA2\",\r\n  \"rating\": 4.8,\r\n  \"description\": \"Phim rất hay và cảm động!\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "http://localhost:8081/review/create"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Person",
+			"item": [
+				{
+					"name": "Actor",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ5R0dZUnZpVTR1VmJqT0kzM1dxaGhZSWVSNUcyIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzQ0NjAzOTA0LCJleHAiOjE3NDU5ODg3MzN9.5JkXB5jyeVZHKgDdlvxcdNdgLVDrvSsWEsUblJYSQXM",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8081/person/actor/rMlXfo9TGonjR8NuwNGE",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"person",
+								"actor",
+								"rMlXfo9TGonjR8NuwNGE"
+							],
+							"query": [
+								{
+									"key": "",
+									"value": "",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "director",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ5R0dZUnZpVTR1VmJqT0kzM1dxaGhZSWVSNUcyIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzQ0NjAzOTA0LCJleHAiOjE3NDU5ODg3MzN9.5JkXB5jyeVZHKgDdlvxcdNdgLVDrvSsWEsUblJYSQXM",
+								"type": "text"
+							}
+						],
+						"url": "http://localhost:8081/person/director/rMlXfo9TGonjR8NuwNGE"
+					},
+					"response": []
+				},
+				{
+					"name": "create",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ5R0dZUnZpVTR1VmJqT0kzM1dxaGhZSWVSNUcyIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzQ0NjAzOTA0LCJleHAiOjE3NDU5ODg3MzN9.5JkXB5jyeVZHKgDdlvxcdNdgLVDrvSsWEsUblJYSQXM",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"name\": \"Leonardo DiCaprio\",\r\n  \"nation\": \"test\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "http://localhost:8081/person/create"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Genres",
+			"item": [
+				{
+					"name": "getAllForMovie",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ5R0dZUnZpVTR1VmJqT0kzM1dxaGhZSWVSNUcyIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzQ0NjAzOTA0LCJleHAiOjE3NDU5ODg3MzN9.5JkXB5jyeVZHKgDdlvxcdNdgLVDrvSsWEsUblJYSQXM",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8081/genres/rMlXfo9TGonjR8NuwNGE",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"genres",
+								"rMlXfo9TGonjR8NuwNGE"
+							],
+							"query": [
+								{
+									"key": "Authorization",
+									"value": null,
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "login",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": "http://localhost:8081/auth/login/yGGYRviU4uVbjOI33WqhhYIeR5G2"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "History",
+			"item": [
+				{
+					"name": "create",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ5R0dZUnZpVTR1VmJqT0kzM1dxaGhZSWVSNUcyIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzQ0NjE4NTQ3LCJleHAiOjE3NDYwMDMzNzZ9.JnTlHz39w-G0zeUgAAxqelrMVPA5uGJTH8oPfQex3H8",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"video_id\": \"IC0eR5980oGUOUm3FrZk\",\r\n    \"person_view\": 35\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "http://localhost:8081/history/create"
+					},
+					"response": []
+				},
+				{
+					"name": "getAll",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ5R0dZUnZpVTR1VmJqT0kzM1dxaGhZSWVSNUcyIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzQ0NzA0ODIyLCJleHAiOjE3NDYwODk2NTF9.avj1hwx427atXFvx36_W7Dc6hx6cZf_6Hu6GPTzUbqo",
+								"type": "text"
+							}
+						],
+						"url": "http://localhost:8081/history/getAll"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "favourite",
+			"item": [
+				{
+					"name": "create",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ5R0dZUnZpVTR1VmJqT0kzM1dxaGhZSWVSNUcyIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzQ0NjE4NTQ3LCJleHAiOjE3NDYwMDMzNzZ9.JnTlHz39w-G0zeUgAAxqelrMVPA5uGJTH8oPfQex3H8",
+								"type": "text"
+							}
+						],
+						"url": "http://localhost:8081/favourite/create/admRnBHg1y6XnKBm4p11"
+					},
+					"response": []
+				},
+				{
+					"name": "findAll",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ5R0dZUnZpVTR1VmJqT0kzM1dxaGhZSWVSNUcyIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzQ0NzA0ODIyLCJleHAiOjE3NDYwODk2NTF9.avj1hwx427atXFvx36_W7Dc6hx6cZf_6Hu6GPTzUbqo",
+								"type": "text"
+							}
+						],
+						"url": "http://localhost:8081/favourite/getAll"
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
