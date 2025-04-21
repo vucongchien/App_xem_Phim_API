@@ -2,6 +2,7 @@ package com.appxemphim.firebaseBackend.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import org.springframework.stereotype.Service;
 
@@ -47,19 +48,18 @@ public class GenresService {
     }
 
     public List<Genres> getAllFGenres(){
-        try{
-            ApiFuture<QuerySnapshot> future = db.collection("Genres").get();      
-            List<QueryDocumentSnapshot> documents = future.get().getDocuments();
-            List<Genres> genresList = new ArrayList<>();
-            for (QueryDocumentSnapshot doc : documents) {
-                Genres genres = doc.toObject(Genres.class);
-                genresList.add(genres);
-            }
-            return genresList;
-        }catch( Exception e){
-            throw new RuntimeException("Lỗi khi lấy danh sách thể loại: "+ e.getMessage());
+         List<Genres> genresList = new ArrayList<>();
+    try {
+        ApiFuture<QuerySnapshot> future = db.collection("Genres").get();
+        List<QueryDocumentSnapshot> documents = future.get().getDocuments();
+        for (QueryDocumentSnapshot doc : documents) {
+            Genres genres = doc.toObject(Genres.class);
+            genresList.add(genres);
         }
-       
+    } catch (InterruptedException | ExecutionException e) {
+        throw new RuntimeException("Lỗi khi lấy danh sách: "+ e.getMessage()); 
+    }
+    return genresList;
     }
     
 
