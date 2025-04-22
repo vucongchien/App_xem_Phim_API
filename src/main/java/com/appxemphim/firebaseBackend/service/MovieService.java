@@ -6,7 +6,6 @@ import com.appxemphim.firebaseBackend.dto.response.MovieDTO;
 import com.appxemphim.firebaseBackend.exception.ResourceNotFoundException;
 import com.appxemphim.firebaseBackend.model.Movie;
 import com.appxemphim.firebaseBackend.model.Review;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.cloud.firestore.CollectionReference;
 import com.google.cloud.firestore.DocumentReference;
 import com.google.cloud.firestore.DocumentSnapshot;
@@ -15,31 +14,27 @@ import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.Query;
 import com.google.cloud.firestore.QuerySnapshot;
 import com.google.firebase.cloud.FirestoreClient;
-import com.meilisearch.sdk.Client;
-import com.meilisearch.sdk.Config;
-import com.meilisearch.sdk.Index;
-import com.meilisearch.sdk.model.DocumentsQuery;
-import com.meilisearch.sdk.model.SearchResult;
-
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.util.CollectionUtils;
 
-
 import java.util.Date;
 import com.google.cloud.Timestamp;
 import java.time.ZoneId;
-import java.io.File;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.Objects;
@@ -55,14 +50,6 @@ public class MovieService {
     private final GenresService genresService;
     private final Firestore db = FirestoreClient.getFirestore();
 
-    private Client meiliClient;
-
-    @PostConstruct
-    public void init() {
-        Config config = new Config("http://localhost:7700", "masterKey"); // Thay "masterKey" bằng key thật của bạn
-        meiliClient = new Client(config);
-    }
-    
     @CacheEvict(value = "movies", allEntries = true)
     public String create(MovieRequest movieRequest) {
         try {
@@ -87,15 +74,6 @@ public class MovieService {
             movie.setCreated_at(movieRequest.getCreated_at());
 
             docRef.set(movie).get();
-
-
-            ObjectMapper mapper = new ObjectMapper();
-            String json = mapper.writeValueAsString(movie);
-            meiliClient.index("movies").addDocuments(json);
-    
-
-
-
             logger.info("Created movie with ID: {}", movie.getMovie_Id());
             return "Thêm phim thành công!";
         } catch (Exception e) {
@@ -130,13 +108,20 @@ public class MovieService {
         }
     }
 
-    public List<Movie> searchMovies(
-        String title,
-        List<String> genres,
-        List<Integer> years,
-        List<String> nations,
-        double minRating) {
-        return logicSearch(title, genres, years, nations, minRating);
+    public Page<Movie> searchMovies(
+            String title,
+            List<String> genres,
+            List<Integer> years,
+            List<String> nations,
+            double minRating,
+            Pageable pageable) {
+        List<Movie> movies = logicSearch(title, genres, years, nations, minRating);
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), movies.size());
+        List<Movie> pagedMovies = movies.subList(start, end);
+
+        return new PageImpl<>(pagedMovies, pageable, movies.size());
     }
 
     private List<Movie> logicSearch(
@@ -169,27 +154,6 @@ public class MovieService {
         } catch (Exception e) {
             logger.error("Search failed: {}", e.getMessage(), e);
             throw new RuntimeException("Search failed: " + e.getMessage(), e);
-        }
-    }
-
-    public void meiliSearchvippro(String titleOrDescription) {
-        try {
-            // Lấy index "movies" từ client
-
-            
-            // Tạo truy vấn tìm kiếm 
-            
-            // Thực hiện tìm kiếm
-
-        
-            // Lấy danh sách phim từ kết quả tìm kiếm
-
-        
-            // Kiểm tra nếu có kết quả
-          
-        } catch (Exception e) {
-            logger.error("Error during MeiliSearch search: {}", e.getMessage(), e);
-            throw new RuntimeException("Error during MeiliSearch search: " + e.getMessage(), e);
         }
     }
 
@@ -274,7 +238,4 @@ public class MovieService {
                 throw new IllegalArgumentException("Invalid detail type: " + detailType);
         }
     }
-    
-    
-
 }

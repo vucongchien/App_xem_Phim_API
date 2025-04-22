@@ -8,6 +8,9 @@ import com.appxemphim.firebaseBackend.service.MovieService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -29,15 +32,18 @@ public class MovieController {
     private final MovieService movieService;
 
     @GetMapping
-    public ResponseEntity<List<Movie>> getMovies(
+    public ResponseEntity<Page<Movie>> getMovies(
             @RequestParam(required = false) String title,
             @RequestParam(required = false) List<String> genres,
             @RequestParam(required = false) List<Integer> years,
             @RequestParam(required = false) List<String> nations,
-            @RequestParam(defaultValue = "0.0") @Min(0) Double minRating) {
+            @RequestParam(defaultValue = "0.0") @Min(0) Double minRating,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size) {
         logger.info("Fetching movies with filters: title={}, genres={}, years={}, nations={}, minRating={}",
                 title, genres, years, nations, minRating);
-        List<Movie> movies = movieService.searchMovies(title, genres, years, nations, minRating);
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Movie> movies = movieService.searchMovies(title, genres, years, nations, minRating, pageable);
         return ResponseEntity.ok(movies);
     }
 
@@ -77,8 +83,4 @@ String response = movieService.create(movieRequest);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
-
-
-
-
 }
