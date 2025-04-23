@@ -5,14 +5,22 @@ import com.appxemphim.firebaseBackend.dto.response.MovieDTO;
 import com.appxemphim.firebaseBackend.exception.ResourceNotFoundException;
 import com.appxemphim.firebaseBackend.model.Movie;
 import com.appxemphim.firebaseBackend.service.MovieService;
+import com.meilisearch.sdk.Client;
+import com.meilisearch.sdk.Index;
+import com.meilisearch.sdk.SearchRequest;
+import com.meilisearch.sdk.model.SearchResult;
+
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,6 +29,7 @@ import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/movies")
@@ -29,7 +38,9 @@ import java.util.Set;
 public class MovieController {
 
     private static final Logger logger = LoggerFactory.getLogger(MovieController.class);
+    private final Client meiliClient;
     private final MovieService movieService;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @GetMapping
     public ResponseEntity<Page<Movie>> getMovies(
@@ -43,15 +54,30 @@ public class MovieController {
         logger.info("Fetching movies with filters: title={}, genres={}, years={}, nations={}, minRating={}",
                 title, genres, years, nations, minRating);
         Pageable pageable = PageRequest.of(page, size);
-        Page<Movie> movies = movieService.searchMovies(title, genres, years, nations, minRating, pageable);
-        return ResponseEntity.ok(movies);
+
+        // If title provided, search via MeiliSearch
+        if (StringUtils.hasText(title)) {
+
+            Page<Movie> pageResult = movieService.searchWithMeili(title, pageable);
+            return ResponseEntity.ok(pageResult);
+        }
+
+        // Otherwise fallback to Firestore logic
+        try {
+            Page<Movie> movies = movieService.searchMovies(title, genres, years, nations, minRating, pageable);
+            return ResponseEntity.ok(movies);
+        } catch (Exception e) {
+            logger.error("Error searching movies with filters: title={}, genres={}, years={}, nations={}, minRating={}",
+                    title, genres, years, nations, minRating, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Page.empty(pageable));
+        }
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<MovieDTO> getMovieById(@PathVariable String id) {
         logger.info("Fetching movie with ID: {}", id);
         try {
-            MovieDTO movieDTO = movieService.getMovieById(id);
+            MovieDTO movieDTO = movieService.getMovieDTOById(id);
             return ResponseEntity.ok(movieDTO);
         } catch (ResourceNotFoundException e) {
             logger.warn("Movie not found with ID: {}", id);
@@ -65,7 +91,7 @@ public class MovieController {
     @PostMapping
     public ResponseEntity<String> createMovie(@Valid @RequestBody MovieRequest movieRequest) {
         logger.info("Creating new movie with title: {}", movieRequest.getTitle());
-String response = movieService.create(movieRequest);
+        String response = movieService.create(movieRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 

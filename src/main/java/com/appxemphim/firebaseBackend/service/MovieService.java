@@ -6,6 +6,7 @@ import com.appxemphim.firebaseBackend.dto.response.MovieDTO;
 import com.appxemphim.firebaseBackend.exception.ResourceNotFoundException;
 import com.appxemphim.firebaseBackend.model.Movie;
 import com.appxemphim.firebaseBackend.model.Review;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.cloud.firestore.CollectionReference;
 import com.google.cloud.firestore.DocumentReference;
 import com.google.cloud.firestore.DocumentSnapshot;
@@ -14,10 +15,18 @@ import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.Query;
 import com.google.cloud.firestore.QuerySnapshot;
 import com.google.firebase.cloud.FirestoreClient;
+import com.meilisearch.sdk.Client;
+import com.meilisearch.sdk.Index;
+import com.meilisearch.sdk.SearchRequest;
+import com.meilisearch.sdk.model.SearchResult;
+
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
@@ -35,6 +44,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.Objects;
@@ -49,6 +59,52 @@ public class MovieService {
     private final PersonService personService;
     private final GenresService genresService;
     private final Firestore db = FirestoreClient.getFirestore();
+    private final ObjectMapper mapper = new ObjectMapper();
+
+    private final Client meiliClient;
+
+    /**
+     * Khởi tạo index “movies” trên MeiliSearch:
+     * - Tạo nếu chưa có, đặt primaryKey
+     * - Cấu hình searchable/filterable/sortable
+     */
+    @PostConstruct
+    public void initMeiliIndex() throws Exception {
+        // 1) Tạo index với primaryKey = "movie_Id" (nếu đã có thì sẽ ném lỗi, catch bỏ
+        // qua)
+        try {
+            meiliClient.createIndex("movies", "movie_Id");
+        } catch (Exception ignored) {
+        }
+
+        // 2) Lấy index
+        Index index = meiliClient.index("movies");
+
+        // 3) Cấu hình các trường để search / filter / sort
+        index.updateSearchableAttributesSettings(new String[] {
+                "title",
+                "description"
+        });
+        index.updateFilterableAttributesSettings(new String[]{
+            "genres",
+            "nation",
+            "rating",
+            "years"
+        });
+        reindexAll();
+    }
+
+    public void reindexAll() throws Exception {
+        List<Movie> all = db.collection("Movies").get().get().getDocuments().stream()
+                .map(d -> {
+                    Movie m = d.toObject(Movie.class);
+                    m.setMovie_Id(d.getId());
+                    return m;
+                })
+                .collect(Collectors.toList());
+        String jsonArray = mapper.writeValueAsString(all);
+        meiliClient.index("movies").addDocuments(jsonArray);
+    }
 
     @CacheEvict(value = "movies", allEntries = true)
     public String create(MovieRequest movieRequest) {
@@ -74,6 +130,16 @@ public class MovieService {
             movie.setCreated_at(movieRequest.getCreated_at());
 
             docRef.set(movie).get();
+
+            // Cập nhật MeiliSearch ngay lập tức
+            try {
+                String jsonMovie = mapper.writeValueAsString(movie);
+                meiliClient.index("movies").addDocuments(jsonMovie);
+            } catch (Exception meiliEx) {
+                logger.error("Failed to update MeiliSearch for movie ID: {}", movie.getMovie_Id(), meiliEx);
+                // Có thể thêm logic thử lại hoặc rollback Firestore nếu cần
+            }
+
             logger.info("Created movie with ID: {}", movie.getMovie_Id());
             return "Thêm phim thành công!";
         } catch (Exception e) {
@@ -82,7 +148,7 @@ public class MovieService {
         }
     }
 
-    public MovieDTO getMovieById(String id) throws Exception {
+    public MovieDTO getMovieDTOById(String id) throws Exception {
         try {
             DocumentReference docRef = db.collection("Movies").document(id.trim());
             DocumentSnapshot snapshot = docRef.get().get();
@@ -108,54 +174,63 @@ public class MovieService {
         }
     }
 
-    public Page<Movie> searchMovies(
-            String title,
-            List<String> genres,
-            List<Integer> years,
-            List<String> nations,
-            double minRating,
-            Pageable pageable) {
-        List<Movie> movies = logicSearch(title, genres, years, nations, minRating);
+    public Page<Movie> searchMovies(String title, List<String> genres, List<Integer> years,
+            List<String> nations, double minRating, Pageable pageable) throws Exception {
+        CollectionReference movieRef = db.collection("Movies");
+        Query query = movieRef;
 
-        int start = (int) pageable.getOffset();
-        int end = Math.min(start + pageable.getPageSize(), movies.size());
-        List<Movie> pagedMovies = movies.subList(start, end);
+        query = applyTitleFilter(query, title);
+        query = applyRatingFilter(query, minRating);
+        query = applyNationFilter(query, nations);
+        query = applyYearFilter(query, years);
+        query = applyGenresFilter(query, genres);
 
-        return new PageImpl<>(pagedMovies, pageable, movies.size());
+        // Áp dụng phân trang
+        query = query.limit(pageable.getPageSize()).offset((int) pageable.getOffset());
+        QuerySnapshot querySnapshot = query.get().get();
+        List<Movie> movies = querySnapshot.getDocuments().stream()
+                .map(doc -> {
+                    Movie movie = doc.toObject(Movie.class);
+                    movie.setMovie_Id(doc.getId());
+                    return movie;
+                })
+                .collect(Collectors.toList());
+
+        // Ước tính tổng số bản ghi (có thể cần truy vấn riêng để đếm chính xác)
+        long total = db.collection("Movies").get().get().size(); // Cải thiện nếu cần
+        return new PageImpl<>(movies, pageable, total);
     }
 
-    private List<Movie> logicSearch(
-            String title,
-            List<String> genres,
-            List<Integer> years,
-            List<String> nations,
-            double minRating) {
+    public Page<Movie> searchWithMeili(String keyword, Pageable pageable) {
+        Index index = meiliClient.index("movies");
+        SearchResult result = index.search(keyword);
+        List<String> ids = result.getHits().stream()
+                .map(hit -> hit.get("movie_Id").toString())
+                .collect(Collectors.toList());
+
+        List<DocumentReference> refs = ids.stream()
+                .map(id -> db.collection("Movies").document(id))
+                .collect(Collectors.toList());
+
         try {
-            CollectionReference movieRef = db.collection("Movies");
-            Query query = movieRef;
-
-            query = applyTitleFilter(query, title);
-            query = applyRatingFilter(query, minRating);
-            query = applyNationFilter(query, nations);
-            query = applyYearFilter(query, years);
-            query = applyGenresFilter(query, genres);
-
-            QuerySnapshot querySnapshot = query.get().get();
-            List<Movie> result = querySnapshot.getDocuments().stream()
-                    .map(doc -> {
-                        Movie movie = doc.toObject(Movie.class);
-                        movie.setMovie_Id(doc.getId());
-                        return movie;
-                    })
+            List<DocumentSnapshot> snapshots = db.getAll(refs.toArray(new DocumentReference[0])).get();
+            List<Movie> movies = snapshots.stream()
+                    .map(snap -> snap.toObject(Movie.class))
                     .collect(Collectors.toList());
 
-            logger.info("Found {} movies matching criteria", result.size());
-            return result;
-        } catch (Exception e) {
-            logger.error("Search failed: {}", e.getMessage(), e);
-            throw new RuntimeException("Search failed: " + e.getMessage(), e);
+            int start = (int) pageable.getOffset();
+            int end = Math.min(start + pageable.getPageSize(), movies.size());
+            List<Movie> pagedMovies = movies.subList(start, end);
+
+            return new PageImpl<>(pagedMovies, pageable, movies.size());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt(); // Khôi phục trạng thái gián đoạn của luồng
+            throw new RuntimeException("Luồng bị gián đoạn khi lấy dữ liệu từ Firestore", e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException("Lỗi khi lấy dữ liệu từ Firestore", e);
         }
     }
+
 
     private Query applyTitleFilter(Query query, String title) {
         if (StringUtils.hasText(title)) {
