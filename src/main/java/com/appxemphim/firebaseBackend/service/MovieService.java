@@ -69,9 +69,8 @@ public class MovieService {
             movie.setDescription(movieRequest.getDescription());
             movie.setPoster_url(googleUtilities.exportLink(movieRequest.getPoster_url()));
             movie.setTrailer_url(googleUtilities.exportLink(movieRequest.getTrailer_url()));
-            movie.setRating(movieRequest.getRating());
             movie.setNation(movieRequest.getNation());
-            movie.setCreated_at(movieRequest.getCreated_at());
+            movie.setCreated_at(Timestamp.of(movieRequest.getCreated_at()));
 
             docRef.set(movie).get();
             logger.info("Created movie with ID: {}", movie.getMovie_Id());

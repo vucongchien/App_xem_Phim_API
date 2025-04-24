@@ -23,13 +23,9 @@ public class MovieRequest {
     @NotBlank(message = "Trailer URL is required")
     private String trailer_url;
 
-    @Min(value = 0, message = "Rating must be at least 0")
-    @Max(value = 10, message = "Rating must not exceed 10")
-    private double rating;
-
     @NotBlank(message = "Nation is required")
     private String nation;
 
     @NotNull(message = "Created date is required")
-    private Timestamp created_at;
+    private Date created_at;
 }

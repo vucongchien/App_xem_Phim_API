@@ -47,15 +47,34 @@ public class FavouriteService {
             ApiFuture<DocumentSnapshot> future = docRef.get();
             DocumentSnapshot document = future.get();
 
-            if(document.exists()){
-                List<Favourite> favourites = (List<Favourite>) document.get("Videos");
-                if(favourites==null){
-                    favourites = new ArrayList<>();
+            if (document.exists()) {
+                List<Map<String, Object>> rawList = (List<Map<String, Object>>) document.get("Videos");
+                List<Favourite> favourites = new ArrayList<>();
+            
+                if (rawList != null) {
+                    for (Map<String, Object> map : rawList) {
+                        Favourite fav = new Favourite();
+                        fav.setMovie_id((String) map.get("movie_id"));
+                        fav.setTime_add((Timestamp) map.get("time_add"));
+                        favourites.add(fav);
+                    }
+            
+                    // Kiểm tra movie_id đã tồn tại chưa
+                    boolean isExists = favourites.stream()
+                            .anyMatch(f -> movie_id.equals(f.getMovie_id()));
+            
+                    if (isExists) {
+                        rawList.removeIf(f -> movie_id.equals(f.get("movie_id")));
+                        docRef.update("Videos", rawList);
+                        return "Đã xóa khỏi danh sách yêu thích";
+                    }
                 }
+            
                 favourites.add(favourite);
-                ApiFuture<WriteResult> writeResult = docRef.update("Videos",favourites);
+                ApiFuture<WriteResult> writeResult = docRef.update("Videos", favourites);
                 writeResult.get();
-            }else{
+            
+            } else {
                 List<Favourite> favourites = new ArrayList<>();
                 favourites.add(favourite);
                 ApiFuture<WriteResult> writeResult = docRef.set(Collections.singletonMap("Videos", favourites));

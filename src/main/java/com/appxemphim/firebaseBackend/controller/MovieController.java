@@ -20,7 +20,6 @@ import javax.validation.Valid;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import java.util.List;
-import java.util.Set;
 
 @RestController
 @RequestMapping("/api/v1/movies")
@@ -65,7 +64,7 @@ public class MovieController {
     @PostMapping
     public ResponseEntity<String> createMovie(@Valid @RequestBody MovieRequest movieRequest) {
         logger.info("Creating new movie with title: {}", movieRequest.getTitle());
-String response = movieService.create(movieRequest);
+        String response = movieService.create(movieRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
