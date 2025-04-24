@@ -1,0 +1,22 @@
+services:
+  meili:
+    image: getmeili/meilisearch:latest
+    container_name: meili
+    environment:
+      MEILI_MASTER_KEY: chiendepvl
+    ports:
+      - "7700:7700"
+
+  backend:
+    image: backend-app
+    container_name: backend
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      MEILI_HOST: "http://meili:7700"
+      MEILI_API_KEY: "chiendepvl"
+    ports:
+      - "8081:8081"
+    depends_on:
+      - meili
