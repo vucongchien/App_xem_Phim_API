@@ -10,6 +10,6 @@ import lombok.Setter;
 public class ReviewRequest {
     private String Movie_id;
     private String User_id;
-    private double  Rating;
+    private int  Rating;
     private String Description;
 }

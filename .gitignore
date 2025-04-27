@@ -33,5 +33,5 @@ build/
 .vscode/
 
 ## giấu vàng
-/src/main/resources/application-secret.properties
+/src/main/resources/application_secret.properties
 /src/main/resources/appxemphim-c633a-firebase-adminsdk-fbsvc-7c8017ca3d.json

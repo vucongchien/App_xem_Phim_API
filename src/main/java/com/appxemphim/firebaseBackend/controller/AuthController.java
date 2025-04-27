@@ -9,12 +9,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.appxemphim.firebaseBackend.dto.request.SetPassWordRequest;
+import com.appxemphim.firebaseBackend.dto.response.PersonReviewDTO;
 import com.appxemphim.firebaseBackend.service.AccountService;
 
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 
 @RestController
@@ -44,6 +48,19 @@ public class AuthController {
             return ResponseEntity.status(401).body(e.getMessage());
         }
     }
+
+    @GetMapping("/information/{uid}")
+    public ResponseEntity<?> getInformation(@PathVariable String uid) {
+        try{
+            PersonReviewDTO reviewDTO = accountService.getInformation(uid);
+            return  ResponseEntity.ok().body(reviewDTO) ;
+        }catch( Exception e){
+            e.printStackTrace();
+            return  ResponseEntity.status(405).body(e.getMessage());
+        }
+        
+    }
+    
 
     //register được thực hiện ở app (client)
 }

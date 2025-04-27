@@ -27,6 +27,5 @@ public class MovieDTO {
     private List<Video> videos;
     private List<Person> actors;
     private List<Person> directors;
-    private List<Review> reviews;
     private List<Genres> genres;
 }

@@ -13,8 +13,9 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class Review {
-    private String User_id;
-    private Double Rating;
+    private String userName;
+    private String avatar;
+    private int Rating;
     private String Description;
     private Timestamp Created_at;
 }

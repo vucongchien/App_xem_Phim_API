@@ -161,7 +161,6 @@ public class MovieService {
             BeanUtils.copyProperties(movie, movieDTO);
             movieDTO.setActors(personService.findALLActorForMovie(id, "Movie_Actor"));
             movieDTO.setDirectors(personService.findALLActorForMovie(id, "Movie_Director"));
-            movieDTO.setReviews((List<Review>) snapshot.get("reviews"));
             movieDTO.setVideos(videoService.getAllForMideo(id));
             movieDTO.setGenres(genresService.getAllForMovie(id));
             return movieDTO;

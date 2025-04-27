@@ -4,15 +4,17 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.appxemphim.firebaseBackend.dto.request.SetPassWordRequest;
+import com.appxemphim.firebaseBackend.dto.response.PersonReviewDTO;
+import com.appxemphim.firebaseBackend.exception.ResourceNotFoundException;
 import com.appxemphim.firebaseBackend.security.JwtUtil;
 import com.google.cloud.firestore.DocumentReference;
 import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
 import com.google.firebase.auth.FirebaseAuth;
+
 
 import com.google.firebase.auth.UserRecord;
 import com.google.firebase.cloud.FirestoreClient;
@@ -70,4 +72,29 @@ public class AccountService {
            throw new RuntimeException("Lỗi khi thay đổi mật khẩu: "+ e.getMessage());
         }
     }
+
+    public PersonReviewDTO getInformation(String uid){
+        try {
+            UserRecord userRecord = FirebaseAuth.getInstance().getUser(uid);
+            if(userRecord==null){
+                throw new RuntimeException("Khong tìm thấy tài khoản với email này");
+            }
+            String name = userRecord.getDisplayName();
+            DocumentReference docRef = db.collection("Avatar").document(uid);
+            DocumentSnapshot snapshot = docRef.get().get();
+            if (!snapshot.exists()) {
+                  throw new ResourceNotFoundException("Movie not found with ID: " + uid);
+               }
+            String avatarUrl = snapshot.get("avatar").toString();
+            if(avatarUrl==null || avatarUrl== ""){
+                avatarUrl= "linkanhdefaul";
+            }
+            return new PersonReviewDTO(avatarUrl,name);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+
 }
