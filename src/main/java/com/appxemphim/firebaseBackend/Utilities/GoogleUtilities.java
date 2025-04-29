@@ -1,24 +1,32 @@
 package com.appxemphim.firebaseBackend.Utilities;
-import java.util.concurrent.CompletableFuture;
+
+import java.io.FileOutputStream;
+import java.util.Collections;
 
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
+
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.UriComponentsBuilder;
 
+
+import com.google.api.client.http.FileContent;
+import com.google.api.services.drive.Drive; 
+import com.google.api.services.drive.model.File;
+
+import lombok.RequiredArgsConstructor;
+
 @Component
+@RequiredArgsConstructor
 public class GoogleUtilities {
     @Value("${google.api.key}")
     private String apiKey;
 
     private final RestTemplate restTemplate;
-    
-    public GoogleUtilities(RestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
-    }
+    private final Drive drive;
 
     @Async
     public long getVideoDuration(String fileLink) {
@@ -57,5 +65,33 @@ public class GoogleUtilities {
         return  "https://drive.google.com/uc?export=download&id=" + fileId;
     }
 
+
+    public String uploadImage(MultipartFile multipartFile) {
+        try {
+            File fileMetadata = new File();
+            fileMetadata.setName(multipartFile.getOriginalFilename());
     
+            // Thêm file vào thư mục có folderId
+            fileMetadata.setParents(Collections.singletonList("14chIuUrZR3YU4uEqYQte1gUiSaZJaSyv"));
+    
+            java.io.File tempFile = java.io.File.createTempFile("upload", multipartFile.getOriginalFilename());
+            try (FileOutputStream fos = new FileOutputStream(tempFile)) {
+                fos.write(multipartFile.getBytes());
+            }
+    
+            FileContent mediaContent = new FileContent(multipartFile.getContentType(), tempFile);
+    
+            File uploadedFile = drive.files().create(fileMetadata, mediaContent)
+                    .setFields("id, webViewLink")
+                    .execute();
+    
+            return exportLink(uploadedFile.getWebViewLink());
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi upload ảnh lên Google Drive: " + e.getMessage(), e);
+        }
+    }
+    
+
 }
+
+
