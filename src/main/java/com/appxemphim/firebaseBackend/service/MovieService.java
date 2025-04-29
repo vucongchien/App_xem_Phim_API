@@ -70,8 +70,7 @@ public class MovieService {
      */
     @PostConstruct
     public void initMeiliIndex() throws Exception {
-        // 1) Tạo index với primaryKey = "movie_Id" (nếu đã có thì sẽ ném lỗi, catch bỏ
-        // qua)
+        // 1) Tạo index với primaryKey = "movie_Id" (nếu đã có thì sẽ ném lỗi, catch bỏ qua)
         try {
             meiliClient.createIndex("movies", "movie_Id");
         } catch (Exception ignored) {
@@ -85,11 +84,11 @@ public class MovieService {
                 "title",
                 "description"
         });
-        index.updateFilterableAttributesSettings(new String[]{
-            "genres",
-            "nation",
-            "rating",
-            "years"
+        index.updateFilterableAttributesSettings(new String[] {
+                "genres",
+                "nation",
+                "rating",
+                "years"
         });
         reindexAll();
     }
@@ -161,7 +160,7 @@ public class MovieService {
             BeanUtils.copyProperties(movie, movieDTO);
             movieDTO.setActors(personService.findALLActorForMovie(id, "Movie_Actor"));
             movieDTO.setDirectors(personService.findALLActorForMovie(id, "Movie_Director"));
-            movieDTO.setVideos(videoService.getAllForMideo(id));
+            movieDTO.setVideos(videoService.getAllVideosForMovie(id));
             movieDTO.setGenres(genresService.getAllForMovie(id));
             return movieDTO;
         } catch (ResourceNotFoundException e) {
@@ -228,7 +227,6 @@ public class MovieService {
             throw new RuntimeException("Lỗi khi lấy dữ liệu từ Firestore", e);
         }
     }
-
 
     private Query applyTitleFilter(Query query, String title) {
         if (StringUtils.hasText(title)) {
@@ -298,7 +296,7 @@ public class MovieService {
     public List<?> getMovieDetails(String movieId, String detailType) {
         switch (detailType.toLowerCase()) {
             case "videos":
-                return videoService.getAllForMideo(movieId);
+                return videoService.getAllVideosForMovie(movieId);
             case "actors":
                 return personService.findALLActorForMovie(movieId, "Movie_Actor");
             case "directors":

@@ -32,7 +32,7 @@ public class VideoController {
    @GetMapping("/{movie_id}")
    public ResponseEntity<List<Video>> getAllForMovie(@PathVariable String movie_id) {
        try{
-            List<Video> videos = videoService.getAllForMideo(movie_id);
+            List<Video> videos = videoService.getAllVideosForMovie(movie_id);
             return ResponseEntity.ok(videos);
        }catch(Exception e){
             e.printStackTrace();
