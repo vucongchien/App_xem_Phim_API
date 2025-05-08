@@ -7,7 +7,10 @@ import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
+import com.appxemphim.firebaseBackend.dto.response.FavoriteDTO;
+import com.appxemphim.firebaseBackend.dto.response.MovieDTO;
 import com.appxemphim.firebaseBackend.model.Favourite;
+import com.appxemphim.firebaseBackend.model.Movie;
 import com.appxemphim.firebaseBackend.security.JwtUtil;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.Timestamp;
@@ -28,6 +31,7 @@ public class FavouriteService {
     private final HttpServletRequest request;
     private final Firestore db = FirestoreClient.getFirestore();
     private final JwtUtil jwtUtil;
+    private final MovieService movieService;
 
     public String create(String movie_id){
         try{
@@ -87,7 +91,7 @@ public class FavouriteService {
         }
     }
 
-    public List<Favourite> getAllForUID(){
+    public List<FavoriteDTO> getAllForUID(){
         try{
             String token = request.getHeader("Authorization");
             if(token!=null && token.startsWith("Bearer ")){
@@ -111,7 +115,18 @@ public class FavouriteService {
                         favourites.add(fav);
                     }
                 }
-            return favourites;
+
+                // Tạo danh sách FavoriteListDTO
+            List<FavoriteDTO> favoriteListDTOs = new ArrayList<>();
+            for (Favourite fav : favourites) {
+                Movie movieDTO = movieService.getMovieModelById(fav.getMovie_id());
+                FavoriteDTO dto = new FavoriteDTO();
+                dto.setMovie(movieDTO);
+                dto.setTime_add(fav.getTime_add());
+                favoriteListDTOs.add(dto);
+            }
+
+            return favoriteListDTOs;
         } else {
             throw new RuntimeException("Không có danh sách yêu thích");
         }
