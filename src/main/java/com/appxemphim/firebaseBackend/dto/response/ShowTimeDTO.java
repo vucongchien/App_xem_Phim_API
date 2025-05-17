@@ -2,6 +2,7 @@ package com.appxemphim.firebaseBackend.dto.response;
 
 public class ShowTimeDTO {
     private String movieId;
+    private String posterURL;
     private int seasonNumber;
     private int episodeNumber;
     private String episodeTitle;
@@ -10,9 +11,10 @@ public class ShowTimeDTO {
 
     public ShowTimeDTO() {}
 
-    public ShowTimeDTO(String movieId, int seasonNumber, int episodeNumber,
+    public ShowTimeDTO(String movieId,String posterURL, int seasonNumber, int episodeNumber,
                        String episodeTitle, String releaseTime, int durationInMinutes) {
         this.movieId = movieId;
+        this.posterURL = posterURL;
         this.seasonNumber = seasonNumber;
         this.episodeNumber = episodeNumber;
         this.episodeTitle = episodeTitle;
@@ -68,11 +70,18 @@ public class ShowTimeDTO {
     public void setDurationInMinutes(int durationInMinutes) {
         this.durationInMinutes = durationInMinutes;
     }
+    public String getPosterURL() {
+        return posterURL;
+    }
+    public void setPosterURL(String posterURL) {
+        this.posterURL = posterURL;
+    }
 
     @Override
     public String toString() {
         return "ShowTimeDTO{" +
                 "movieId='" + movieId + '\'' +
+                ", posterURL='" + posterURL + '\'' +
                 ", seasonNumber=" + seasonNumber +
                 ", episodeNumber=" + episodeNumber +
                 ", episodeTitle='" + episodeTitle + '\'' +

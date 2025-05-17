@@ -10,10 +10,12 @@ import lombok.Setter;
 @NoArgsConstructor
 public class ShowTime {
     private String movieId;
+    private String posterURL;
     private List<EpisodeInfo> episodes; 
 
-    public ShowTime(String movieId, List<EpisodeInfo> episodes) {
+    public ShowTime(String movieId,String posterURL , List<EpisodeInfo> episodes) {
         this.movieId = movieId;
+        this.posterURL = posterURL;
         this.episodes = episodes;
     }
 
@@ -21,6 +23,7 @@ public class ShowTime {
     public String toString() {
         return "ShowTime{" +
                 "movieId='" + movieId + '\'' +
+                ", posterURL='" + posterURL + '\'' +
                 ", episodes=" + episodes +
                 '}';
     }

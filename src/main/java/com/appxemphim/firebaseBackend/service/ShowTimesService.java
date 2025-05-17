@@ -5,6 +5,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.hibernate.annotations.Cache;
 import org.slf4j.Logger;
@@ -43,38 +44,65 @@ public class ShowTimesService {
 
     @CacheEvict(value = "showtimes", allEntries = true)
     public String createShowTime(ShowTimeRequest req) {
+        // Validate request
         if (!StringUtils.hasText(req.getMovieId())) {
             throw new IllegalArgumentException("Movie ID is required");
         }
-        List<EpisodeInfo> modelEpisodes = new ArrayList<>();
-        for (EpisodeInfoDTO dto : req.getShowTimes()) {
-            EpisodeInfo m = new EpisodeInfo();
-            m.setSeasonNumber(dto.getSeasonNumber());
-            m.setEpisodeNumber(dto.getEpisodeNumber());
-            m.setEpisodeTitle(dto.getEpisodeTitle());
-            m.setDurationInMinutes(dto.getDurationInMinutes());
-            if (dto.getReleaseTime() != null) {
-                long epochSec = dto.getReleaseTime().toEpochSecond(ZoneOffset.UTC);
-                m.setReleaseTime(Timestamp.ofTimeSecondsAndNanos(epochSec, dto.getReleaseTime().getNano()));
+
+        // Map DTO to model
+        List<EpisodeInfo> episodes = req.getShowTimes().stream()
+                .map(dto -> {
+                    EpisodeInfo ep = new EpisodeInfo();
+                    ep.setSeasonNumber(dto.getSeasonNumber());
+                    ep.setEpisodeNumber(dto.getEpisodeNumber());
+                    ep.setEpisodeTitle(dto.getEpisodeTitle());
+                    ep.setDurationInMinutes(dto.getDurationInMinutes());
+                    if (dto.getReleaseTime() != null) {
+                        var rt = dto.getReleaseTime();
+                        long epochSec = rt.toEpochSecond(ZoneOffset.UTC);
+                        ep.setReleaseTime(Timestamp.ofTimeSecondsAndNanos(epochSec, rt.getNano()));
+                    }
+                    return ep;
+                })
+                .collect(Collectors.toList());
+
+        // Build ShowTime entity
+        ShowTime showTime = new ShowTime();
+        showTime.setMovieId(req.getMovieId());
+        showTime.setEpisodes(episodes);
+
+        try {
+            // Fetch poster URL from Firestore
+            var docSnap = db.collection("Movies").document(req.getMovieId()).get().get();
+            String posterUrl = docSnap.getString("poster_url");
+            if (posterUrl == null) {
+                throw new IllegalArgumentException("Poster URL not found for movie ID: " + req.getMovieId());
             }
-            modelEpisodes.add(m);
+            showTime.setPosterURL(posterUrl != null ? posterUrl : "del co hinh");
+        } catch (Exception e) {
+            logger.error("Failed to fetch movie {}: {}", req.getMovieId(), e.getMessage(), e);
+            throw new RuntimeException("Error fetching movie data", e);
         }
 
-        ShowTime entity = new ShowTime();
-        entity.setMovieId(req.getMovieId());
-        entity.setEpisodes(modelEpisodes);
+        // Persist showtimes
+        try {
+            db.collection("Showtimes")
+                    .document(req.getMovieId())
+                    .set(showTime)
+                    .get();
+        } catch (Exception e) {
+            logger.error("Failed to save showtime for {}: {}", req.getMovieId(), e.getMessage(), e);
+            throw new RuntimeException("Error saving showtime", e);
+        }
 
-        db.collection("showtimes")
-                .document(req.getMovieId())
-                .set(entity);
-
-        return "Showtime for " + req.getMovieId() + " created";
+        return String.format("Showtime created for movie %s" ,                     req.getMovieId(),
+                     showTime.getPosterURL());
     }
 
     public Page<ShowTimeDTO> getShowTimesByDay(int day, Pageable pageable) {
         List<ShowTimeDTO> allMatchingEpisodes = new ArrayList<>();
         try {
-            var allDocs = db.collection("showtimes").get().get().getDocuments();
+            var allDocs = db.collection("Showtimes").get().get().getDocuments();
 
             for (var doc : allDocs) {
                 ShowTime showTime = doc.toObject(ShowTime.class);
@@ -93,6 +121,7 @@ public class ShowTimesService {
                     if (dayOfWeek == day) {
                         ShowTimeDTO dto = new ShowTimeDTO();
                         dto.setMovieId(showTime.getMovieId());
+                        dto.setPosterURL(showTime.getPosterURL());
                         dto.setSeasonNumber(episode.getSeasonNumber());
                         dto.setEpisodeNumber(episode.getEpisodeNumber());
                         dto.setEpisodeTitle(episode.getEpisodeTitle());
@@ -127,7 +156,7 @@ public class ShowTimesService {
                     now.getSeconds() + 7 * 24 * 60 * 60, // +7 days
                     0);
 
-            var allDocs = db.collection("showtimes").get().get().getDocuments();
+            var allDocs = db.collection("Showtimes").get().get().getDocuments();
 
             for (var doc : allDocs) {
                 ShowTime showTime = doc.toObject(ShowTime.class);
@@ -142,6 +171,7 @@ public class ShowTimesService {
 
                         ShowTimeDTO dto = new ShowTimeDTO();
                         dto.setMovieId(showTime.getMovieId());
+                        dto.setPosterURL(showTime.getPosterURL());
                         dto.setSeasonNumber(episode.getSeasonNumber());
                         dto.setEpisodeNumber(episode.getEpisodeNumber());
                         dto.setEpisodeTitle(episode.getEpisodeTitle());
@@ -168,7 +198,7 @@ public class ShowTimesService {
     /**
      * Cập nhật toàn bộ danh sách episodes cho movieId.
      */
-    @CacheEvict(value = "showtimes", allEntries = true)
+    @CacheEvict(value = "Showtimes", allEntries = true)
     public String updateShowTime(ShowTimeRequest showTimeRequest) {
         if (!StringUtils.hasText(showTimeRequest.getMovieId())) {
             throw new IllegalArgumentException("Movie ID is required");
@@ -189,7 +219,7 @@ public class ShowTimesService {
         if (modelEpisodes == null) {
             throw new IllegalArgumentException("List of episodes is required");
         }
-        DocumentReference docRef = db.collection("showtimes").document(showTimeRequest.getMovieId());
+        DocumentReference docRef = db.collection("Showtimes").document(showTimeRequest.getMovieId());
         // Cập nhật field "episodes" (overwrite)
         try {
             docRef.update("episodes", modelEpisodes).get();
@@ -206,14 +236,14 @@ public class ShowTimesService {
     /**
      * Xóa toàn bộ document showtime theo movieId.
      */
-    @CacheEvict(value = "showtimes", allEntries = true)
+    @CacheEvict(value = "Showtimes", allEntries = true)
     public String deleteShowTime(String movieId) {
         try {
             if (!StringUtils.hasText(movieId)) {
                 throw new IllegalArgumentException("Movie ID is required");
             }
 
-            DocumentReference docRef = db.collection("showtimes").document(movieId);
+            DocumentReference docRef = db.collection("Showtimes").document(movieId);
             docRef.delete().get();
 
             logger.info("Deleted showtime for movieId = {}", movieId);

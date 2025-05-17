@@ -7,9 +7,11 @@ import javax.validation.constraints.NotBlank;
 import com.appxemphim.firebaseBackend.model.EpisodeInfo;
 
 import lombok.Data;
+import lombok.Getter;
 
 
 @Data
+@Getter
 public class ShowTimeRequest {
     @NotBlank(message = "Movie ID is required")
     private String movieId;
