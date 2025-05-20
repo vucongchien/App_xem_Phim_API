@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import com.appxemphim.firebaseBackend.Utilities.GoogleUtilities;
 import com.appxemphim.firebaseBackend.dto.request.ProfileRequest;
+import com.appxemphim.firebaseBackend.dto.response.PersonReviewDTO;
 import com.appxemphim.firebaseBackend.exception.ResourceNotFoundException;
 import com.appxemphim.firebaseBackend.security.JwtUtil;
 import com.google.cloud.firestore.DocumentReference;
@@ -27,9 +28,11 @@ public class ProfileService {
     private final Firestore db = FirestoreClient.getFirestore();
     private final HttpServletRequest request;
     private final JwtUtil jwtUtil;
+    private final AccountService accountService;
     
     public ResponseEntity<String> updateProfile(ProfileRequest profileRequest){
         try{
+            
             String token = request.getHeader("Authorization");
             if(token!=null && token.startsWith("Bearer ")){
                 token= token.substring(7);
@@ -37,8 +40,8 @@ public class ProfileService {
                 throw new RuntimeException("Token không hợp lệ");
             }
             String uid = jwtUtil.getUid(token);
+            PersonReviewDTO personReviewDTO = accountService.getInformation(uid);
             StringBuilder responseMessage = new StringBuilder("Đã cập nhật: ");
-            //String uid =profileRequest.getName();
             if (profileRequest.getFile() != null) {
                 String uri = googleUtilities.uploadImage(profileRequest.getFile());
                 DocumentReference docRef = db.collection("Avatar").document(uid);
@@ -58,13 +61,13 @@ public class ProfileService {
             UserRecord.UpdateRequest updateRequest = new UserRecord.UpdateRequest(uid);
             boolean shouldUpdate = false;
 
-            if (profileRequest.getGmail() != null && !profileRequest.getGmail().isEmpty()) {
+            if (profileRequest.getGmail() != null && !profileRequest.getGmail().isEmpty() && profileRequest.getGmail()!= personReviewDTO.getEmail()) {
                 updateRequest.setEmail(profileRequest.getGmail());
                 responseMessage.append("email, ");
                 shouldUpdate = true;
             }
 
-            if (profileRequest.getName() != null && !profileRequest.getName().isEmpty()) {
+            if (profileRequest.getName() != null && !profileRequest.getName().isEmpty() && profileRequest.getName()!= personReviewDTO.getName()) {
                 updateRequest.setDisplayName(profileRequest.getName());
                 responseMessage.append("tên, ");
                 shouldUpdate = true;
@@ -83,4 +86,5 @@ public class ProfileService {
                 .body("Lỗi khi cập nhật hồ sơ: " + e.getMessage());
         }
     }
+
 }

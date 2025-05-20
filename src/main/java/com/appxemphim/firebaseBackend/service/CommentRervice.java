@@ -1,23 +1,14 @@
 package com.appxemphim.firebaseBackend.service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.appxemphim.firebaseBackend.dto.request.CommentRequest;
 import com.appxemphim.firebaseBackend.model.Comment;
 import com.appxemphim.firebaseBackend.security.JwtUtil;
-import com.google.api.core.ApiFuture;
-import com.google.cloud.Timestamp;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -43,16 +34,18 @@ public class CommentRervice {
             String uid = jwtUtil.getUid(token);
             Comment comment = new Comment();
             comment.setContent(commentRequest.getContent());
-            comment.setCreated_at(Timestamp.now());
+            Date currentDate = new Date();
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+            comment.setCreated_at(sdf.format(currentDate));
             comment.setParent_comment_id(commentRequest.getParent_comment_id());
             comment.setUser_id(uid);
+            comment.setLike(0);
             database.child("Comment").child(commentRequest.getMovie_id()).push().setValueAsync(comment);
             return "Thêm bình luận thành công";
         }catch( Exception e){
             throw new RuntimeException("Lỗi khi thêm comment: "+ e.getMessage());
         }  
     }
-
     //đọc comment sẽ ở client
     //delete comment ở client
     

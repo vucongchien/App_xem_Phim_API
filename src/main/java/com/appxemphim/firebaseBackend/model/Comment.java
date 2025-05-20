@@ -12,6 +12,7 @@ import lombok.Setter;
 public class Comment {
     String User_id;
     String Content;
-    Timestamp Created_at;
+    String Created_at;
     String Parent_comment_id;
+    int like;
 }

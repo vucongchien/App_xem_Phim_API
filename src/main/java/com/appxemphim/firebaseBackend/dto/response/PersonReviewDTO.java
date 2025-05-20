@@ -10,9 +10,11 @@ import lombok.Setter;
 public class PersonReviewDTO {
     String avatar;
     String name;
+    String email;
 
-    public PersonReviewDTO( String avatar, String name){
+    public PersonReviewDTO( String avatar, String name, String email){
         this.avatar= avatar;
         this.name= name;
+        this.email = email;
     }
 }

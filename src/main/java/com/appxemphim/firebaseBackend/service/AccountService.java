@@ -19,10 +19,15 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.UserRecord;
 import com.google.firebase.cloud.FirestoreClient;
 
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
+
 
 @Service
+@RequiredArgsConstructor
 public class AccountService {
     private final Firestore db = FirestoreClient.getFirestore();
+    private final HttpServletRequest request;
     @Autowired
     private JwtUtil jwtUtil;
     private FirebaseAuth firebaseAuth;
@@ -75,21 +80,34 @@ public class AccountService {
 
     public PersonReviewDTO getInformation(String uid){
         try {
+            if("1".equals(uid)){
+                String token = request.getHeader("Authorization");
+                if(token!=null && token.startsWith("Bearer ")){
+                    token= token.substring(7);
+                }else{
+                    throw new RuntimeException("Token không hợp lệ");
+                }
+                uid = jwtUtil.getUid(token);
+            }
             UserRecord userRecord = FirebaseAuth.getInstance().getUser(uid);
             if(userRecord==null){
                 throw new RuntimeException("Khong tìm thấy tài khoản với email này");
             }
             String name = userRecord.getDisplayName();
+            String email = userRecord.getEmail();
+            String avatarUrl;
             DocumentReference docRef = db.collection("Avatar").document(uid);
             DocumentSnapshot snapshot = docRef.get().get();
             if (!snapshot.exists()) {
-                  throw new ResourceNotFoundException("Movie not found with ID: " + uid);
-               }
-            String avatarUrl = snapshot.get("avatar").toString();
-            if(avatarUrl==null || avatarUrl== ""){
-                avatarUrl= "linkanhdefaul";
+                avatarUrl= "https://drive.google.com/uc?export=download&id=1i9s-fI45h_EQGUaiSqfrzUohyXo3PLPj";
+            }else{
+                avatarUrl = snapshot.get("avatar").toString();
+                if(avatarUrl==null || avatarUrl== ""){
+                    avatarUrl= "https://drive.google.com/uc?export=download&id=1i9s-fI45h_EQGUaiSqfrzUohyXo3PLPj";
+                }
             }
-            return new PersonReviewDTO(avatarUrl,name);
+            
+            return new PersonReviewDTO(avatarUrl, name, email);
         } catch (Exception e) {
             e.printStackTrace();
             return null;

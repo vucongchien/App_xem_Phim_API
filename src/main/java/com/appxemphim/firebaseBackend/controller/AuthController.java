@@ -49,7 +49,7 @@ public class AuthController {
         }
     }
 
-    @GetMapping("/information/{uid}")
+    @GetMapping("/information/{uid}")//uid ==1 thì lấy uid từ token 
     public ResponseEntity<?> getInformation(@PathVariable String uid) {
         try{
             PersonReviewDTO reviewDTO = accountService.getInformation(uid);
@@ -58,7 +58,6 @@ public class AuthController {
             e.printStackTrace();
             return  ResponseEntity.status(405).body(e.getMessage());
         }
-        
     }
     
 
