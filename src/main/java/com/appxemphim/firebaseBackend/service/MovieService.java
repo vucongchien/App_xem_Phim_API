@@ -309,4 +309,22 @@ public class MovieService {
                 throw new IllegalArgumentException("Invalid detail type: " + detailType);
         }
     }
+
+
+    public Movie getMovieModelById(String movieId) {
+        try {
+            DocumentReference docRef = db.collection("Movies").document(movieId);
+            DocumentSnapshot snapshot = docRef.get().get();
+    
+            if (!snapshot.exists()) {
+                throw new ResourceNotFoundException("Không tìm thấy phim với ID: " + movieId);
+            }
+            Movie movie = snapshot.toObject(Movie.class);
+            return movie;
+        } catch (Exception e) {
+            logger.error("Lỗi khi lấy phim với ID {}: {}", movieId, e.getMessage());
+            throw new RuntimeException("Không thể lấy thông tin phim: " + e.getMessage(), e);
+        }
+    }
+    
 }
