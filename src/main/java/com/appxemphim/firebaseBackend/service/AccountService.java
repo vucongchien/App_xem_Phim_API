@@ -33,8 +33,19 @@ public class AccountService {
     private FirebaseAuth firebaseAuth;
 
 
-
-    public String createToken(String uid ) {
+    public String resetToken(String refreshToken){
+        try{
+            if (jwtUtil.isRefreshTokenExpired(refreshToken)) {
+                throw new RuntimeException("Refresh token expired");
+            }
+            String uid = jwtUtil.getUidFromRefreshToken(refreshToken);
+            String role = jwtUtil.getRoleFromRefreshToken(refreshToken);
+            return jwtUtil.createJwtToken(uid, role);
+        }catch(Exception e){
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+    public Map<String, String> createToken(String uid ) {
         try{        
             DocumentReference roleRef = db.collection("Account_role").document(uid);
             DocumentSnapshot snapshot = roleRef.get().get();
@@ -52,7 +63,7 @@ public class AccountService {
                 throw new RuntimeException("Role " + roleId + " not found in Role collection.");
             }
             String role = roleSnapshot.getString("name");
-            return jwtUtil.createJwtToken(uid, role);
+            return jwtUtil.generateTokens(uid, role);
         }catch(Exception e){
             throw new RuntimeException(e.getMessage());
         }

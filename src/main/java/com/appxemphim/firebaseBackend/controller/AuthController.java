@@ -1,5 +1,7 @@
 package com.appxemphim.firebaseBackend.controller;
 
+import java.util.Map;
+
 import org.checkerframework.checker.interning.qual.UsesObjectEquals;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -16,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -30,12 +33,12 @@ public class AuthController {
     private final AccountService accountService;
 
     @PostMapping("/login/{uid}")
-    public ResponseEntity<String> login(@PathVariable String uid) {
+    public ResponseEntity<Map<String, String>> login(@PathVariable String uid) {
         try {
-            String jwtToken = accountService.createToken(uid);
+            Map<String, String> jwtToken = accountService.createToken(uid);
             return ResponseEntity.ok(jwtToken);
         } catch (RuntimeException e) {
-            return ResponseEntity.status(401).body(e.getMessage());
+            return ResponseEntity.status(401).body(Map.of("error", e.getMessage()));
         }
     }
 
@@ -57,6 +60,16 @@ public class AuthController {
         }catch( Exception e){
             e.printStackTrace();
             return  ResponseEntity.status(405).body(e.getMessage());
+        }
+    }
+
+   @GetMapping("/resettoken/{refreshToken}")
+    public ResponseEntity<?> resetToken(@PathVariable String refreshToken) {
+        try {
+            String newAccessToken = accountService.resetToken(refreshToken);
+            return ResponseEntity.ok( newAccessToken);
+        } catch (Exception e) {
+            return ResponseEntity.status(401).body(e.getMessage());
         }
     }
     
