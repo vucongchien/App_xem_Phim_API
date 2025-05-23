@@ -9,7 +9,5 @@ import lombok.Setter;
 @NoArgsConstructor
 public class ReviewRequest {
     private String Movie_id;
-    private String User_id;
     private int  Rating;
-    private String Description;
 }
