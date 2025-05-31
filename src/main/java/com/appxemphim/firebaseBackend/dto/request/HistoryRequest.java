@@ -9,5 +9,5 @@ import lombok.Setter;
 @NoArgsConstructor
 public class HistoryRequest {
     String video_id;
-    Float person_view;
+    Double person_view;
 }
