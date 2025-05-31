@@ -90,7 +90,10 @@ public class HistoryService {
                 if (videoList != null) {
                     for (Map<String, Object> map : videoList) {
                         History his = new History();
-                        his.setPerson_view((Double) map.get("person_view"));
+                       Object personViewObj = map.get("person_view");
+                        if (personViewObj instanceof Number) {
+                            his.setPerson_view(((Number) personViewObj).doubleValue());
+                        }
                         his.setVideo_id((String) map.get("video_id") );
                         his.setUpdated_at((Timestamp) map.get("updated_at"));
                         history.add(his);
@@ -98,7 +101,7 @@ public class HistoryService {
                 }
                 return history;
         } else {
-            throw new RuntimeException("Không có danh sách yêu thích");
+            return Collections.emptyList();
         }
         }catch(Exception e){
             throw new RuntimeException("Lỗi khi lấy Danh sách yêu thích: "+ e.getMessage());
