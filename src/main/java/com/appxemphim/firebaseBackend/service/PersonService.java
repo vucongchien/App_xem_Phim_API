@@ -7,7 +7,9 @@ import java.util.concurrent.ExecutionException;
 import org.springframework.stereotype.Service;
 
 import com.appxemphim.firebaseBackend.dto.request.PersonRequest;
+import com.appxemphim.firebaseBackend.model.MovieGenres;
 import com.appxemphim.firebaseBackend.model.Person;
+import com.appxemphim.firebaseBackend.model.PersonMoive;
 import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.Query;
 import com.google.cloud.firestore.QuerySnapshot;
@@ -65,6 +67,26 @@ public class PersonService {
             return "Thêm tác giả - diễn viên thành công";
         }catch( Exception e){
             throw new RuntimeException("Lỗi khi thêm tác giả - diễn viên: " + e.getMessage());
+        }
+    }
+
+     public String addmoviePerson(String loai,PersonMoive personMoive){
+        try{
+            PersonMoive mg = new PersonMoive();
+             DocumentReference docRef = null;
+            if (loai.equals("actor")) {
+                docRef = db.collection("Movie_Actor").document();
+            } else if (loai.equals("director")) {
+                docRef = db.collection("Movie_Director").document();
+            } else {
+                throw new IllegalArgumentException("Loại không hợp lệ: " + loai);
+            }
+            mg.setActor_Director_id(personMoive.getActor_Director_id());
+            mg.setMovive_Id(personMoive.getMovive_Id());
+            docRef.set(mg).get();
+            return "Thêm person cho phim thành công!";
+        }catch (Exception e){
+        throw new RuntimeException("Lỗi khi thêm movieGenres: "+ e.getMessage());
         }
     }
     

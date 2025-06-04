@@ -4,13 +4,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.appxemphim.firebaseBackend.dto.request.PersonRequest;
+import com.appxemphim.firebaseBackend.model.MovieGenres;
 import com.appxemphim.firebaseBackend.model.Person;
+import com.appxemphim.firebaseBackend.model.PersonMoive;
 import com.appxemphim.firebaseBackend.service.PersonService;
 
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -41,6 +44,14 @@ public class PersonController {
         return personService.create(personRequest);
     }
     
-    
+    @PostMapping("/personinmovie/{loai}")
+    public ResponseEntity<String> personnmovie(@RequestBody PersonMoive personMoive,@PathVariable String loai) {
+        try{
+        String  result = personService.addmoviePerson(loai,personMoive);
+        return ResponseEntity.ok(result);
+       }catch(RuntimeException e) {
+        return ResponseEntity.status(401).body(e.getMessage());
+    }
+    }
     
 }

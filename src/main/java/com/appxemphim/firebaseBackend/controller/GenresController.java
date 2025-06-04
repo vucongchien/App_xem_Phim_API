@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import com.appxemphim.firebaseBackend.model.Genres;
+import com.appxemphim.firebaseBackend.model.MovieGenres;
 import com.appxemphim.firebaseBackend.service.GenresService;
 
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+
 
 
 
@@ -41,5 +45,16 @@ public class GenresController {
         return ResponseEntity.status(401).body(e.getMessage());
     }
     }
+
+    @PostMapping("/genresinmovie")
+    public ResponseEntity<String> genresinmovie(@RequestBody MovieGenres movieGenres) {
+        try{
+        String  result = genresService.addmovieGenres(movieGenres);
+        return ResponseEntity.ok(result);
+       }catch(RuntimeException e) {
+        return ResponseEntity.status(401).body(e.getMessage());
+    }
+    }
+    
     
 }

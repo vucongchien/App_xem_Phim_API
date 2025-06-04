@@ -8,7 +8,9 @@ import org.springframework.stereotype.Service;
 
 import com.appxemphim.firebaseBackend.model.Genres;
 import com.appxemphim.firebaseBackend.model.Movie;
+import com.appxemphim.firebaseBackend.model.MovieGenres;
 import com.google.api.core.ApiFuture;
+import com.google.cloud.Timestamp;
 import com.google.cloud.firestore.CollectionReference;
 import com.google.cloud.firestore.DocumentReference;
 import com.google.cloud.firestore.DocumentSnapshot;
@@ -60,6 +62,19 @@ public class GenresService {
         throw new RuntimeException("Lỗi khi lấy danh sách: "+ e.getMessage()); 
     }
     return genresList;
+    }
+
+    public String addmovieGenres(MovieGenres movieGenres){
+        try{
+            MovieGenres mg = new MovieGenres();
+            DocumentReference docRef = db.collection("Movie_Genres").document();
+            mg.setGenres_id(movieGenres.getGenres_id());
+            mg.setMovive_Id(movieGenres.getMovive_Id());
+            docRef.set(mg).get();
+            return "Thêm thể loại cho phim thành công!";
+        }catch (Exception e){
+        throw new RuntimeException("Lỗi khi thêm movieGenres: "+ e.getMessage());
+        }
     }
     
 
