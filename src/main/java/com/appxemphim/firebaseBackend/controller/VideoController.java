@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.appxemphim.firebaseBackend.Utilities.GoogleUtilities;
+import com.appxemphim.firebaseBackend.dto.request.VideoRequest;
 import com.appxemphim.firebaseBackend.model.Movie;
 import com.appxemphim.firebaseBackend.model.Video;
 import com.appxemphim.firebaseBackend.service.VideoService;
@@ -39,6 +40,18 @@ public class VideoController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
        }
    }
+
+   @PostMapping("/create")
+   public ResponseEntity<String> postMethodName(@RequestBody VideoRequest videoRequest) {
+       try{
+            String result = videoService.addVideoToMovie(videoRequest);
+            return ResponseEntity.ok(result);
+       }catch(Exception e){
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+       }
+   }
+   
    
     
 }
