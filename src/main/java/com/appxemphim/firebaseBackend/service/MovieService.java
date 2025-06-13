@@ -252,19 +252,26 @@ public class MovieService {
     }
 
     private Query applyYearFilter(Query query, List<Integer> years) {
-        if (!CollectionUtils.isEmpty(years)) {
-            List<Timestamp> yearTimestamps = years.stream()
-                    .flatMap(year -> {
-                        LocalDateTime start = LocalDateTime.of(year, 1, 1, 0, 0);
-                        LocalDateTime end = start.plusYears(1);
-                        return Stream.of(
-                                Timestamp.of(Date.from(start.atZone(ZoneId.systemDefault()).toInstant())),
-                                Timestamp.of(Date.from(end.atZone(ZoneId.systemDefault()).toInstant())));
-                    })
-                    .collect(Collectors.toList());
-            return query.whereIn("created_at", yearTimestamps);
+        if (CollectionUtils.isEmpty(years)) {
+            return query;
         }
-        return query;
+
+        // Lấy năm đầu tiên từ danh sách để lọc. Firestore không hỗ trợ OR trên các
+        // range query.
+        Integer yearToFilter = years.get(0);
+
+        // Xác định thời điểm bắt đầu của năm (ví dụ: 00:00:00 ngày 01/01/2025)
+        LocalDateTime startOfYear = LocalDateTime.of(yearToFilter, 1, 1, 0, 0, 0);
+        Timestamp startTimestamp = Timestamp.of(Date.from(startOfYear.atZone(ZoneId.systemDefault()).toInstant()));
+
+        // Xác định thời điểm kết thúc của năm (là thời điểm bắt đầu của năm tiếp theo)
+        LocalDateTime endOfYear = startOfYear.plusYears(1);
+        Timestamp endTimestamp = Timestamp.of(Date.from(endOfYear.atZone(ZoneId.systemDefault()).toInstant()));
+
+        // Áp dụng truy vấn dải: created_at >= start AND created_at < end
+        logger.info("Applying year filter: >= {} and < {}", startTimestamp, endTimestamp);
+        return query.whereGreaterThanOrEqualTo("created_at", startTimestamp)
+                .whereLessThan("created_at", endTimestamp);
     }
 
     private Query applyGenresFilter(Query query, List<String> genreNames) throws Exception {
@@ -295,7 +302,7 @@ public class MovieService {
         List<String> movieIds = movieGenresSnapshot.getDocuments().stream()
                 .map(doc -> doc.getString("movive_Id"))
                 .filter(Objects::nonNull)
-                .distinct() 
+                .distinct()
                 .collect(Collectors.toList());
         logger.info("after Found {} movie IDs matching genres: {}", movieIds.size(), movieIds);
         // Nếu không có phim nào thuộc các thể loại này
