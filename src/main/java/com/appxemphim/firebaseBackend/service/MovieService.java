@@ -326,5 +326,20 @@ public class MovieService {
             throw new RuntimeException("Không thể lấy thông tin phim: " + e.getMessage(), e);
         }
     }
-    
+
+    public Movie getMovieByVideoId(String videoId) throws Exception {
+        CollectionReference moviesRef = db.collection("Movies");
+        QuerySnapshot snapshot = moviesRef.get().get();
+
+        for (DocumentSnapshot doc : snapshot.getDocuments()) {
+            List<String> videos = (List<String>) doc.get("videos");
+            if (videos != null && videos.contains(videoId)) {
+                Movie movie = doc.toObject(Movie.class);
+                movie.setMovie_Id(doc.getId());
+                return movie;
+            }
+        }
+        throw new ResourceNotFoundException("Không tìm thấy phim nào chứa videoId: " + videoId);
+    }
+
 }

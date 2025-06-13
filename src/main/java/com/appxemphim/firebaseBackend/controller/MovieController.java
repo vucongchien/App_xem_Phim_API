@@ -109,4 +109,19 @@ public class MovieController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
+    @GetMapping("/by-video/{videoId}")
+    public ResponseEntity<Movie> getMovieByVideoId(@PathVariable String videoId) {
+        logger.info("Fetching movie by videoId: {}", videoId);
+        try {
+            Movie movie = movieService.getMovieByVideoId(videoId);
+            return ResponseEntity.ok(movie);
+        } catch (ResourceNotFoundException e) {
+            logger.warn("Movie not found with videoId: {}", videoId);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        } catch (Exception e) {
+            logger.error("Error fetching movie by videoId: {}", videoId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
 }
