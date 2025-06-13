@@ -70,7 +70,8 @@ public class MovieService {
      */
     @PostConstruct
     public void initMeiliIndex() throws Exception {
-        // 1) Tạo index với primaryKey = "movie_Id" (nếu đã có thì sẽ ném lỗi, catch bỏ qua)
+        // 1) Tạo index với primaryKey = "movie_Id" (nếu đã có thì sẽ ném lỗi, catch bỏ
+        // qua)
         try {
             meiliClient.createIndex("movies", "movie_Id");
         } catch (Exception ignored) {
@@ -181,7 +182,7 @@ public class MovieService {
         query = applyNationFilter(query, nations);
         query = applyYearFilter(query, years);
         query = applyGenresFilter(query, genres);
-
+        logger.info("Constructed Firestore query: {}", query);
         // Áp dụng phân trang
         query = query.limit(pageable.getPageSize()).offset((int) pageable.getOffset());
         QuerySnapshot querySnapshot = query.get().get();
@@ -266,20 +267,47 @@ public class MovieService {
         return query;
     }
 
-    private Query applyGenresFilter(Query query, List<String> genres) throws Exception {
-        if (!CollectionUtils.isEmpty(genres)) {
-            Query genreQuery = db.collection("Movie_Genres").whereIn("genres_id", genres);
-            QuerySnapshot snapshot = genreQuery.get().get();
-            List<String> movieIds = snapshot.getDocuments().stream()
-                    .map(doc -> doc.getString("movie_id"))
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
-            if (movieIds.isEmpty()) {
-                return query.whereEqualTo(FieldPath.documentId(), "none"); // Không có kết quả
-            }
-            return query.whereIn(FieldPath.documentId(), movieIds);
+    private Query applyGenresFilter(Query query, List<String> genreNames) throws Exception {
+        if (CollectionUtils.isEmpty(genreNames)) {
+            return query; // Nếu không có tên thể loại nào thì bỏ qua
         }
-        return query;
+
+        // BƯỚC 1: Từ danh sách tên thể loại (genreNames), tìm các ID thể loại tương
+        // ứng.
+        // Truy vấn collection "Genres" nơi có trường "name" khớp với các tên được cung
+        // cấp.
+        Query genresIdQuery = db.collection("Genres").whereIn("name", genreNames);
+        QuerySnapshot genresSnapshot = genresIdQuery.get().get();
+        logger.info("Found {} genres matching names: {}", genresSnapshot.size(), genreNames);
+        List<String> genreIds = genresSnapshot.getDocuments().stream()
+                .map(doc -> doc.getId()) // Lấy ID của document trong collection "Genres"
+                .collect(Collectors.toList());
+
+        // Nếu không tìm thấy ID thể loại nào (ví dụ: gõ sai tên), trả về query không có
+        // kết quả.
+        if (genreIds.isEmpty()) {
+            return query.whereEqualTo(FieldPath.documentId(), "none");
+        }
+
+        Query movieGenresQuery = db.collection("Movie_Genres").whereIn("genres_id", genreIds);
+        QuerySnapshot movieGenresSnapshot = movieGenresQuery.get().get();
+        logger.info("Found {} movie genres matching genre IDs: {}", movieGenresSnapshot.size(), genreIds);
+        List<String> movieIds = movieGenresSnapshot.getDocuments().stream()
+                .map(doc -> doc.getString("movive_Id"))
+                .filter(Objects::nonNull)
+                .distinct() 
+                .collect(Collectors.toList());
+        logger.info("after Found {} movie IDs matching genres: {}", movieIds.size(), movieIds);
+        // Nếu không có phim nào thuộc các thể loại này
+        if (movieIds.isEmpty()) {
+            return query.whereEqualTo(FieldPath.documentId(), "none");
+        }
+        if (movieIds.size() > 30) {
+            logger.warn("Warning: Genre filter resulted in more than 30 movie IDs. Truncating to 30.");
+            movieIds = movieIds.subList(0, 30);
+        }
+
+        return query.whereIn(FieldPath.documentId(), movieIds);
     }
 
     private List<Review> getReviewsForMovie(String movieId) {
@@ -310,12 +338,11 @@ public class MovieService {
         }
     }
 
-
     public Movie getMovieModelById(String movieId) {
         try {
             DocumentReference docRef = db.collection("Movies").document(movieId);
             DocumentSnapshot snapshot = docRef.get().get();
-    
+
             if (!snapshot.exists()) {
                 throw new ResourceNotFoundException("Không tìm thấy phim với ID: " + movieId);
             }
