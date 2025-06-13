@@ -1,11 +1,13 @@
 package com.appxemphim.firebaseBackend.Utilities;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.web.client.RestTemplate;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
@@ -18,7 +20,11 @@ import com.google.firebase.database.FirebaseDatabase;
 
 @Configuration
 public class Firebase {
-     @Bean
+
+    @Value("${FIREBASE_CREDENTIALS_JSON}")
+    private String firebaseCredentialsJson;
+
+    @Bean
     public FirebaseDatabase firebaseDatabase() {
         return FirebaseDatabase.getInstance();
     }
@@ -33,10 +39,9 @@ public class Firebase {
         return new RestTemplate();
     }
 
-    //ggdrive
     @Bean
     public Drive buildDriveService() throws Exception {
-        InputStream in = new ClassPathResource("appxemphim-c633a-firebase-adminsdk-fbsvc-7c8017ca3d.json").getInputStream();
+        InputStream in = new ByteArrayInputStream(firebaseCredentialsJson.getBytes(StandardCharsets.UTF_8));
 
         GoogleCredential credential = GoogleCredential.fromStream(in)
                 .createScoped(Collections.singleton(DriveScopes.DRIVE_FILE));

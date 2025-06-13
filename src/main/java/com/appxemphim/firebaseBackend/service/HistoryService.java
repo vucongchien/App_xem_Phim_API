@@ -132,5 +132,42 @@ public class HistoryService {
             throw new RuntimeException("Lỗi khi lấy Danh sách yêu thích: "+ e.getMessage());
         }
     }
-    
+    public List<History> findByVideoId(String videoId) {
+        try {
+            String token = request.getHeader("Authorization");
+            if (token == null || !token.startsWith("Bearer ")) {
+                throw new RuntimeException("Token không hợp lệ");
+            }
+            token = token.substring(7);
+            String uid = jwtUtil.getUid(token);
+            DocumentReference docRef = db.collection("History").document(uid);
+            DocumentSnapshot snapshot = docRef.get().get();
+
+            List<History> result = new ArrayList<>();
+            if (snapshot.exists()) {
+                List<Map<String, Object>> videoList = (List<Map<String, Object>>) snapshot.get("videos");
+                if (videoList != null) {
+                    for (Map<String, Object> map : videoList) {
+                        String currentVideoId = (String) map.get("video_id");
+                        if (videoId.equals(currentVideoId)) {
+                            History history = new History();
+                            Object personViewObj = map.get("person_view");
+                            if (personViewObj instanceof Number) {
+                                history.setPerson_view(((Number) personViewObj).doubleValue());
+                            }
+                            history.setVideo_id(currentVideoId);
+                            history.setUpdated_at((Timestamp) map.get("updated_at"));
+                            result.add(history);
+                        }
+                    }
+                }
+            }
+            return result;
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi khi lấy lịch sử theo videoId: " + e.getMessage(), e);
+        }
+    }
+
+
+
 }
