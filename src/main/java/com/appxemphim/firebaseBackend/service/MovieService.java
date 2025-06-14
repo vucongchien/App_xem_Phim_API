@@ -18,6 +18,7 @@ import com.google.firebase.cloud.FirestoreClient;
 import com.meilisearch.sdk.Client;
 import com.meilisearch.sdk.Index;
 import com.meilisearch.sdk.SearchRequest;
+import com.meilisearch.sdk.exceptions.MeilisearchApiException;
 import com.meilisearch.sdk.model.SearchResult;
 
 import jakarta.annotation.PostConstruct;
@@ -103,37 +104,23 @@ public class MovieService {
             try {
                 System.out.println("🔄 Trying to connect to MeiliSearch (attempt " + attempt + ")...");
 
-                // Check connection bằng cách gọi /health hoặc tạo index
-                meiliClient.getVersion(); // nếu gọi được thì Meili đã online
+                meiliClient.getVersion(); // kiểm tra đã sẵn sàng
 
-                // Tạo index nếu chưa có
                 try {
                     meiliClient.createIndex("movies", "movie_Id");
                 } catch (Exception ignored) {}
 
-                // Chờ index thực sự tồn tại
-                Index index = null;
-                for (int i = 0; i < 5; i++) {
-                    try {
-                        index = meiliClient.index("movies");
-                        break; // đã tồn tại
-                    } catch (Exception e) {
-                        System.out.println("⏳ Waiting for index `movies` to become available...");
-                        Thread.sleep(1000);
-                    }
+                if (!waitForIndexExist(meiliClient, "movies", 10000)) {
+                    throw new RuntimeException("Index `movies` chưa được tạo trong thời gian cho phép.");
                 }
 
-            if (index == null) throw new RuntimeException("Index 'movies' không thể được tạo.");
+                Index index = meiliClient.index("movies");
 
-                index.updateSearchableAttributesSettings(new String[] {
-                    "title",
-                    "description"
+                index.updateSearchableAttributesSettings(new String[]{
+                    "title", "description"
                 });
-                index.updateFilterableAttributesSettings(new String[] {
-                    "genres",
-                    "nation",
-                    "rating",
-                    "years"
+                index.updateFilterableAttributesSettings(new String[]{
+                    "genres", "nation", "rating", "years"
                 });
 
                 reindexAll();
@@ -143,7 +130,6 @@ public class MovieService {
 
             } catch (Exception e) {
                 System.err.println("⚠️ MeiliSearch not ready yet: " + e.getMessage());
-
                 if (attempt == maxRetries) {
                     System.err.println("❌ MeiliSearch failed to initialize after " + maxRetries + " attempts.");
                     e.printStackTrace();
@@ -156,6 +142,20 @@ public class MovieService {
                 }
             }
         }
+    }
+    private boolean waitForIndexExist(Client client, String indexUid, int timeoutMs) throws InterruptedException {
+        int waited = 0;
+        while (waited < timeoutMs) {
+            try {
+                client.getIndex(indexUid); // kiểm tra index thực sự có
+                return true;
+            } catch (MeilisearchApiException e) {
+                if (!e.getMessage().contains("index_not_found")) throw e;
+                Thread.sleep(1000); // chờ rồi thử lại
+                waited += 1000;
+            }
+        }
+        return false; // hết thời gian chờ mà vẫn không có
     }
 
 
