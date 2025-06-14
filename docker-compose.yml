@@ -14,7 +14,7 @@ services:
       context: .
       dockerfile: Dockerfile
     environment:
-      MEILI_HOST: "http://meili:7700"
+      MEILI_HOST: "https://meliserach.onrender.com"
       MEILI_API_KEY: "chiendepvl"
     ports:
       - "8081:8081"
