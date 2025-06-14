@@ -95,37 +95,57 @@ public class MovieService {
     // }
 
     @PostConstruct
-    public void initMeiliIndex() {
+public void initMeiliIndex() {
+    int maxRetries = 10;
+    int delayMillis = 3000;
+
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
         try {
-            // 1) Tạo index
+            System.out.println("🔄 Trying to connect to MeiliSearch (attempt " + attempt + ")...");
+
+            // Check connection bằng cách gọi /health hoặc tạo index
+            meiliClient.getVersion(); // nếu gọi được thì Meili đã online
+
+            // Tạo index nếu chưa có
             try {
                 meiliClient.createIndex("movies", "movie_Id");
-            } catch (Exception ignored) {
-            }
+            } catch (Exception ignored) {}
 
-            // 2) Lấy index
             Index index = meiliClient.index("movies");
 
-            // 3) Cấu hình các trường để search / filter / sort
-            index.updateSearchableAttributesSettings(new String[]{
-                    "title",
-                    "description"
+            index.updateSearchableAttributesSettings(new String[] {
+                "title",
+                "description"
             });
-            index.updateFilterableAttributesSettings(new String[]{
-                    "genres",
-                    "nation",
-                    "rating",
-                    "years"
+            index.updateFilterableAttributesSettings(new String[] {
+                "genres",
+                "nation",
+                "rating",
+                "years"
             });
 
             reindexAll();
 
             System.out.println("✅ MeiliSearch index initialized successfully.");
+            return;
+
         } catch (Exception e) {
-            System.err.println("❌ Error initializing MeiliSearch index: " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("⚠️ MeiliSearch not ready yet: " + e.getMessage());
+
+            if (attempt == maxRetries) {
+                System.err.println("❌ MeiliSearch failed to initialize after " + maxRetries + " attempts.");
+                e.printStackTrace();
+            } else {
+                try {
+                    Thread.sleep(delayMillis);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                }
+            }
         }
     }
+}
+
 
     public void reindexAll() throws Exception {
         List<Movie> all = db.collection("Movies").get().get().getDocuments().stream()
