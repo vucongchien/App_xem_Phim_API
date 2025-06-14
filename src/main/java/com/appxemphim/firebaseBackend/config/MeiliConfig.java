@@ -17,6 +17,7 @@ public class MeiliConfig {
 
     @Bean
     public Client meiliClient() {
+        System.out.println("Meili host: " + meiliHost);
         // Khởi tạo Config với host và apiKey
         Config config = new Config(meiliHost, meiliApiKey);
         // Nếu muốn dùng Jackson thay vì Gson mặc định, có thể:
