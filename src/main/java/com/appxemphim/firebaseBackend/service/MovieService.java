@@ -68,30 +68,63 @@ public class MovieService {
      * - Tạo nếu chưa có, đặt primaryKey
      * - Cấu hình searchable/filterable/sortable
      */
+    // @PostConstruct
+    // public void initMeiliIndex() throws Exception {
+    //     // 1) Tạo index với primaryKey = "movie_Id" (nếu đã có thì sẽ ném lỗi, catch bỏ
+    //     // qua)
+    //     try {
+    //         meiliClient.createIndex("movies", "movie_Id");
+    //     } catch (Exception ignored) {
+    //     }
+
+    //     // 2) Lấy index
+    //     Index index = meiliClient.index("movies");
+
+    //     // 3) Cấu hình các trường để search / filter / sort
+    //     index.updateSearchableAttributesSettings(new String[] {
+    //             "title",
+    //             "description"
+    //     });
+    //     index.updateFilterableAttributesSettings(new String[] {
+    //             "genres",
+    //             "nation",
+    //             "rating",
+    //             "years"
+    //     });
+    //     reindexAll();
+    // }
+
     @PostConstruct
-    public void initMeiliIndex() throws Exception {
-        // 1) Tạo index với primaryKey = "movie_Id" (nếu đã có thì sẽ ném lỗi, catch bỏ
-        // qua)
+    public void initMeiliIndex() {
         try {
-            meiliClient.createIndex("movies", "movie_Id");
-        } catch (Exception ignored) {
+            // 1) Tạo index
+            try {
+                meiliClient.createIndex("movies", "movie_Id");
+            } catch (Exception ignored) {
+            }
+
+            // 2) Lấy index
+            Index index = meiliClient.index("movies");
+
+            // 3) Cấu hình các trường để search / filter / sort
+            index.updateSearchableAttributesSettings(new String[]{
+                    "title",
+                    "description"
+            });
+            index.updateFilterableAttributesSettings(new String[]{
+                    "genres",
+                    "nation",
+                    "rating",
+                    "years"
+            });
+
+            reindexAll();
+
+            System.out.println("✅ MeiliSearch index initialized successfully.");
+        } catch (Exception e) {
+            System.err.println("❌ Error initializing MeiliSearch index: " + e.getMessage());
+            e.printStackTrace();
         }
-
-        // 2) Lấy index
-        Index index = meiliClient.index("movies");
-
-        // 3) Cấu hình các trường để search / filter / sort
-        index.updateSearchableAttributesSettings(new String[] {
-                "title",
-                "description"
-        });
-        index.updateFilterableAttributesSettings(new String[] {
-                "genres",
-                "nation",
-                "rating",
-                "years"
-        });
-        reindexAll();
     }
 
     public void reindexAll() throws Exception {
