@@ -3,7 +3,7 @@ services:
     image: getmeili/meilisearch:latest
     container_name: meili
     environment:
-      MEILI_MASTER_KEY: chiendepvl
+      MEILI_MASTER_KEY: chiepdepvlsuperkey
     ports:
       - "7700:7700"
 
@@ -14,8 +14,8 @@ services:
       context: .
       dockerfile: Dockerfile
     environment:
-      MEILI_HOST: "https://meliserach.onrender.com"
-      MEILI_API_KEY: "chiendepvl"
+      MEILI_HOST: "https://meili-search-long-water-6444.fly.dev/"
+      MEILI_API_KEY: "chiepdepvlsuperkey"
     ports:
       - "8081:8081"
     depends_on:
