@@ -3,7 +3,6 @@ package com.appxemphim.firebaseBackend.service;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
@@ -46,36 +45,26 @@ public class ReviewService {
                throw new RuntimeException("Token không hợp lệ");
          }
          String uid = jwtUtil.getUid(token);
+         Review review = new Review();
+         review.setRating(reviewRequest.getRating());
+         review.setCreated_at(Timestamp.now());
+         review.setUid(uid);
+         
+         DocumentReference movieRef  = db.collection("Movies").document(reviewRequest.getMovie_id());
+         ApiFuture<WriteResult> add = movieRef.update("reviews", FieldValue.arrayUnion(review));
+         add.get();
 
-        DocumentReference movieRef = db.collection("Movies").document(reviewRequest.getMovie_id());
-        DocumentSnapshot snapshot = movieRef.get().get();
-
-        List<Map<String, Object>> reviews = (List<Map<String, Object>>) snapshot.get("reviews");
-        if (reviews != null) {
-            for (Map<String, Object> existingReview : reviews) {
-                if (uid.equals(existingReview.get("uid"))) {
-                    return "Bạn đã đánh giá phim này rồi";
-                }
-            }
-        }
-
-        Review review = new Review();
-        review.setRating(reviewRequest.getRating());
-        review.setCreated_at(Timestamp.now());
-        review.setUid(uid);
-
-        ApiFuture<WriteResult> add = movieRef.update("reviews", FieldValue.arrayUnion(review));
-        add.get();
-
-        int quantity = (reviews != null) ? reviews.size() + 1 : 1;
-        Double rating = snapshot.getDouble("rating");
-        if (rating == null) rating = 0.0;
-        rating = ((rating * (quantity - 1)) + reviewRequest.getRating()) / quantity;
-
-        ApiFuture<WriteResult> future = movieRef.update("rating", rating);
-        future.get();
-
-        return "Thêm review thành công";
+         DocumentSnapshot snapshot = movieRef.get().get();
+         List<Object> reviews = (List<Object>) snapshot.get("reviews");
+         int quantity = (reviews != null) ? reviews.size() : 1;
+         
+         Double rating = snapshot.getDouble("rating");
+         if (rating == null) rating = 0.0;
+         rating = ((rating*(quantity-1))+reviewRequest.getRating())/quantity;
+         
+         ApiFuture<WriteResult> future = movieRef.update("rating", rating);
+         future.get();
+         return "Thêm review thành công";
       }catch( Exception e){
          return "Thêm review thất bại: "+ e.getMessage();
       }
