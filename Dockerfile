@@ -19,7 +19,7 @@ COPY --from=build /app/target/*.jar app.jar
 
 EXPOSE 8081
 
-ENV MEILI_HOST=https://meili-search-long-water-6444.fly.dev/
-ENV MEILI_API_KEY=chiepdepvlsuperkey
+ENV MEILI_HOST=http://localhost:7700
+ENV MEILI_API_KEY=chiendepvl
 
 CMD ["java", "-jar", "app.jar"]

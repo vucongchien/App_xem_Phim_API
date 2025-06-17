@@ -69,80 +69,80 @@ public class MovieService {
      * - Tạo nếu chưa có, đặt primaryKey
      * - Cấu hình searchable/filterable/sortable
      */
-    // @PostConstruct
-    // public void initMeiliIndex() throws Exception {
-    //     // 1) Tạo index với primaryKey = "movie_Id" (nếu đã có thì sẽ ném lỗi, catch bỏ
-    //     // qua)
-    //     try {
-    //         meiliClient.createIndex("movies", "movie_Id");
-    //     } catch (Exception ignored) {
-    //     }
-
-    //     // 2) Lấy index
-    //     Index index = meiliClient.index("movies");
-
-    //     // 3) Cấu hình các trường để search / filter / sort
-    //     index.updateSearchableAttributesSettings(new String[] {
-    //             "title",
-    //             "description"
-    //     });
-    //     index.updateFilterableAttributesSettings(new String[] {
-    //             "genres",
-    //             "nation",
-    //             "rating",
-    //             "years"
-    //     });
-    //     reindexAll();
-    // }
-
     @PostConstruct
-    public void initMeiliIndex() {
-        int maxRetries = 10;
-        int delayMillis = 3000;
-
-        for (int attempt = 1; attempt <= maxRetries; attempt++) {
-            try {
-                System.out.println("🔄 Trying to connect to MeiliSearch (attempt " + attempt + ")...");
-
-                meiliClient.getVersion(); // kiểm tra đã sẵn sàng
-
-                try {
-                    meiliClient.createIndex("movies", "movie_Id");
-                } catch (Exception ignored) {}
-
-                if (!waitForIndexExist(meiliClient, "movies", 10000)) {
-                    throw new RuntimeException("Index `movies` chưa được tạo trong thời gian cho phép.");
-                }
-
-                Index index = meiliClient.index("movies");
-
-                index.updateSearchableAttributesSettings(new String[]{
-                    "title", "description"
-                });
-                index.updateFilterableAttributesSettings(new String[]{
-                    "genres", "nation", "rating", "years"
-                });
-
-                reindexAll();
-
-                System.out.println("✅ MeiliSearch index initialized successfully.");
-                return;
-
-            } catch (Exception e) {
-                System.err.println("⚠️ MeiliSearch not ready yet: " + e.getMessage());
-                if (attempt == maxRetries) {
-                    System.err.println("❌ MeiliSearch failed to initialize after " + maxRetries + " attempts.");
-                    e.printStackTrace();
-                } else {
-                    try {
-                        Thread.sleep(delayMillis);
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                    }
-                }
-            }
+    public void initMeiliIndex() throws Exception {
+        // 1) Tạo index với primaryKey = "movie_Id" (nếu đã có thì sẽ ném lỗi, catch bỏ
+        // qua)
+        try {
+            meiliClient.createIndex("movies", "movie_Id");
+        } catch (Exception ignored) {
         }
+
+        // 2) Lấy index
+        Index index = meiliClient.index("movies");
+
+        // 3) Cấu hình các trường để search / filter / sort
+        index.updateSearchableAttributesSettings(new String[] {
+                "title",
+                "description"
+        });
+        index.updateFilterableAttributesSettings(new String[] {
+                "genres",
+                "nation",
+                "rating",
+                "years"
+        });
+        reindexAll();
     }
+
+    // @PostConstruct
+    // public void initMeiliIndex() {
+    //     int maxRetries = 10;
+    //     int delayMillis = 3000;
+
+    //     for (int attempt = 1; attempt <= maxRetries; attempt++) {
+    //         try {
+    //             System.out.println("🔄 Trying to connect to MeiliSearch (attempt " + attempt + ")...");
+
+    //             meiliClient.getVersion(); // kiểm tra đã sẵn sàng
+
+    //             try {
+    //                 meiliClient.createIndex("movies", "movie_Id");
+    //             } catch (Exception ignored) {}
+
+    //             if (!waitForIndexExist(meiliClient, "movies", 10000)) {
+    //                 throw new RuntimeException("Index `movies` chưa được tạo trong thời gian cho phép.");
+    //             }
+
+    //             Index index = meiliClient.index("movies");
+
+    //             index.updateSearchableAttributesSettings(new String[]{
+    //                 "title", "description"
+    //             });
+    //             index.updateFilterableAttributesSettings(new String[]{
+    //                 "genres", "nation", "rating", "years"
+    //             });
+
+    //             reindexAll();
+
+    //             System.out.println("✅ MeiliSearch index initialized successfully.");
+    //             return;
+
+    //         } catch (Exception e) {
+    //             System.err.println("⚠️ MeiliSearch not ready yet: " + e.getMessage());
+    //             if (attempt == maxRetries) {
+    //                 System.err.println("❌ MeiliSearch failed to initialize after " + maxRetries + " attempts.");
+    //                 e.printStackTrace();
+    //             } else {
+    //                 try {
+    //                     Thread.sleep(delayMillis);
+    //                 } catch (InterruptedException ie) {
+    //                     Thread.currentThread().interrupt();
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
     private boolean waitForIndexExist(Client client, String indexUid, int timeoutMs) throws InterruptedException {
         int waited = 0;
         while (waited < timeoutMs) {
