@@ -6,7 +6,7 @@
 [![Cloud DB](https://img.shields.io/badge/Database-Cloud%20Firestore-FFA000?style=flat-square&logo=firebase&logoColor=white)](https://firebase.google.com/docs/firestore)
 [![Container](https://img.shields.io/badge/Container-Docker%20Compose-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
 
-A RESTful backend microservice supporting the **AppXemPhim** movie streaming platform. Built with **Spring Boot 3**, it provides high-throughput catalog management, typo-tolerant full-text search via **MeiliSearch**, a Google Drive streaming URL extractor via **Jsoup**, and stateless **JWT** token lifecycle management.
+A RESTful backend microservice supporting the [AppXemPhim](https://github.com/vucongchien/AppXemPhim) Android movie streaming platform. Built with **Spring Boot 3**, it provides high-throughput catalog management, typo-tolerant full-text search via **MeiliSearch**, a Google Drive streaming URL extractor via **Jsoup**, and stateless **JWT** token lifecycle management.
 
 ---
 
